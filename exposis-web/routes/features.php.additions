@@ -1,0 +1,19 @@
+// --- Add to routes/web.php ---
+use App\Http\Controllers\ProjectMessageController;
+use App\Http\Controllers\ProjectFileController;
+use App\Http\Controllers\SitemapController;
+use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\ExportController;
+use App\Http\Controllers\Admin\PublicProjectController as AdminPublicProjectController;
+
+Route::get('/sitemap.xml', SitemapController::class)->name('sitemap');
+
+// inside the existing Route::middleware('auth') group:
+//   Route::post('/projects/{project}/messages', [ProjectMessageController::class, 'store'])->middleware('throttle:20,1')->name('projects.messages.store');
+//   Route::post('/projects/{project}/files', [ProjectFileController::class, 'store'])->middleware('throttle:10,1')->name('projects.files.store');
+//   Route::get('/files/{file}', [ProjectFileController::class, 'download'])->name('files.download');
+
+// inside the existing admin group (define export BEFORE /projects/{project}):
+//   Route::get('/', DashboardController::class)->name('dashboard');
+//   Route::get('/projects/export', ExportController::class)->name('projects.export');
+//   Route::resource('public-projects', AdminPublicProjectController::class)->except('show');
