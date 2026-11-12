@@ -1,5 +1,4 @@
-<x-app-layout>
-  <x-slot name="header"><h1 class="text-xl font-extrabold">{{ $project->reference }} · {{ $project->title }}</h1></x-slot>
+<x-admin-layout :title="'Demande '.$project->reference">
   @php $f = 'rounded-xl border-gray-400'; $ev = $project->evaluation; @endphp
   <div class="mx-auto grid max-w-6xl gap-6 p-6 lg:grid-cols-2">
     @if (session('status'))<p class="rounded-lg bg-orange-100 p-3 text-sm font-medium lg:col-span-2" role="status">{{ session('status') }}</p>@endif
@@ -30,4 +29,4 @@
         <button class="rounded-xl bg-orange-600 px-5 py-3 font-semibold text-white">Enregistrer l’évaluation</button></form>
     </div>
   </div>
-</x-app-layout>
+</x-admin-layout>

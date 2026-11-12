@@ -7,7 +7,7 @@ EXPOSIS is a research, experimentation, and innovation community in Côte d’Iv
 - Public JSON API for published projects and visitor feasibility submissions.
 - Standalone Blade pages explaining EXPOSIS, its focus areas, and published work.
 - Public feasibility, prototype, and research submissions at `/soumettre`. Visitors do not need an account; submissions remain private in the review queue.
-- Member registration and login. Members can submit community projects with participant names; proposals stay private until an administrator publishes them.
+- Member registration and login. Members can submit completed or in-progress community projects with participant names, a project link, and up to five private images; proposals and images stay private until an administrator publishes them.
 - An admin workspace at `/admin` to review feasibility requests, score and evaluate them, and moderate public project submissions.
 - A public project catalogue at `/projets`, including participant lists for approved projects.
 
@@ -35,9 +35,12 @@ Set `ADMIN_EMAIL` and `ADMIN_PASSWORD` in `.env` before creating the administrat
 Set `EXPOSIS_INBOX` to the address that should receive new visitor and member submissions.
 
 ```sh
+php artisan db:seed
 php artisan db:seed --class=AdminSeeder
 php artisan serve
 ```
+
+The default seeder adds five clearly labeled fictional sample projects to the public catalogue. It is safe to run more than once. `AdminSeeder` remains a separate command and requires the credentials above.
 
 Configure a production mail transport in `.env` to send submission and review notifications. The default local mailer writes messages to the log.
 

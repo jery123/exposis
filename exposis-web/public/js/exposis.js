@@ -6,6 +6,7 @@
         menuButton.addEventListener('click', function () {
             var isOpen = navigation.classList.toggle('open');
             menuButton.setAttribute('aria-expanded', String(isOpen));
+            menuButton.setAttribute('aria-label', isOpen ? 'Fermer le menu' : 'Ouvrir le menu');
         });
     }
 

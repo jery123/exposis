@@ -127,3 +127,14 @@ footer .brand{color:#fff;display:inline-block;margin:0 0 8px}.cp{margin-top:32px
 .team{margin:0 0 28px;padding:20px;border:2px solid var(--ink);border-radius:16px;background:var(--mist)}.team h2{font-size:1.3rem}
 .team ul{display:flex;flex-wrap:wrap;gap:8px;list-style:none;padding:0;margin:14px 0 0}
 .team li{padding:5px 12px;border:1px solid var(--line);border-radius:99px;background:#fff;font-weight:700}
+.public-submission-form{gap:16px}
+.public-form-heading{padding-bottom:8px}
+.public-form-heading>span{display:inline-block;color:#B84A00;font-weight:700;font-size:.78rem;letter-spacing:.1em;text-transform:uppercase}
+.public-form-heading h2{margin-top:9px;font-size:clamp(1.45rem,3vw,2rem)}
+.public-form-heading p{margin-top:8px;color:var(--mute);font-size:.88rem}
+.public-form-section{display:flex;align-items:center;gap:12px;padding-top:18px;border-top:1px solid var(--line)}
+.public-form-section>span{display:grid;place-items:center;width:29px;height:29px;border-radius:50%;background:#FFE6D4;color:#B84A00;font-size:.72rem;font-weight:700}
+.public-form-section strong{font:800 1rem var(--d);letter-spacing:-.02em}
+.public-submission-form .chk{font-size:.9rem;line-height:1.55}
+.public-submission-form .field-note{line-height:1.65}
+@media(max-width:600px){#f{box-shadow:6px 6px 0 var(--o)}.public-form-heading h2{font-size:1.55rem}.public-form-section{padding-top:15px}}

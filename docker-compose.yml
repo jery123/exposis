@@ -1,0 +1,174 @@
+services:
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    environment:
+      APP_DOMAIN: ${APP_DOMAIN:?Set APP_DOMAIN in .env.production}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      next:
+        condition: service_healthy
+    networks:
+      - proxy
+
+  next:
+    build:
+      context: ./exposis-next
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      HOSTNAME: 0.0.0.0
+      PORT: "3000"
+      LARAVEL_APP_URL: http://backend
+      LARAVEL_API_URL: http://backend
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:3000/api/health').then((r) => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    networks:
+      - proxy
+
+  backend:
+    build:
+      context: ./exposis-web
+      dockerfile: Dockerfile
+      target: web
+    restart: unless-stopped
+    depends_on:
+      app:
+        condition: service_started
+    volumes:
+      - laravel_storage:/var/www/html/storage/app:ro
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1/up || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    networks:
+      - proxy
+      - app-internal
+
+  app:
+    build:
+      context: ./exposis-web
+      dockerfile: Dockerfile
+      target: app
+    restart: unless-stopped
+    environment:
+      APP_NAME: EXPOSIS
+      APP_ENV: production
+      APP_KEY: ${APP_KEY:?Set APP_KEY in .env.production}
+      APP_DEBUG: "false"
+      APP_URL: https://${APP_DOMAIN:?Set APP_DOMAIN in .env.production}
+      APP_LOCALE: fr
+      APP_FALLBACK_LOCALE: fr
+      LOG_CHANNEL: stderr
+      LOG_LEVEL: info
+      DB_CONNECTION: pgsql
+      DB_HOST: db
+      DB_PORT: "5432"
+      DB_DATABASE: ${POSTGRES_DB:?Set POSTGRES_DB in .env.production}
+      DB_USERNAME: ${POSTGRES_USER:?Set POSTGRES_USER in .env.production}
+      DB_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in .env.production}
+      SESSION_DRIVER: database
+      SESSION_SECURE_COOKIE: "true"
+      SESSION_SAME_SITE: lax
+      CACHE_STORE: database
+      QUEUE_CONNECTION: database
+      FILESYSTEM_DISK: local
+      MAIL_MAILER: ${MAIL_MAILER:-log}
+      MAIL_HOST: ${MAIL_HOST:-127.0.0.1}
+      MAIL_PORT: ${MAIL_PORT:-2525}
+      MAIL_USERNAME: ${MAIL_USERNAME:-}
+      MAIL_PASSWORD: ${MAIL_PASSWORD:-}
+      MAIL_SCHEME: ${MAIL_SCHEME:-}
+      MAIL_FROM_ADDRESS: ${MAIL_FROM_ADDRESS:-hello@example.com}
+      MAIL_FROM_NAME: EXPOSIS
+      EXPOSIS_INBOX: ${EXPOSIS_INBOX:-contact-lab@exposis.net}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:?Set ADMIN_EMAIL in .env.production}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?Set ADMIN_PASSWORD in .env.production}
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - laravel_storage:/var/www/html/storage/app
+    networks:
+      - app-internal
+
+  queue:
+    build:
+      context: ./exposis-web
+      dockerfile: Dockerfile
+      target: app
+    restart: unless-stopped
+    command: ["php", "artisan", "queue:work", "--sleep=3", "--tries=3", "--timeout=90"]
+    environment:
+      APP_NAME: EXPOSIS
+      APP_ENV: production
+      APP_KEY: ${APP_KEY:?Set APP_KEY in .env.production}
+      APP_DEBUG: "false"
+      APP_URL: https://${APP_DOMAIN:?Set APP_DOMAIN in .env.production}
+      LOG_CHANNEL: stderr
+      LOG_LEVEL: info
+      DB_CONNECTION: pgsql
+      DB_HOST: db
+      DB_PORT: "5432"
+      DB_DATABASE: ${POSTGRES_DB:?Set POSTGRES_DB in .env.production}
+      DB_USERNAME: ${POSTGRES_USER:?Set POSTGRES_USER in .env.production}
+      DB_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in .env.production}
+      QUEUE_CONNECTION: database
+      CACHE_STORE: database
+      FILESYSTEM_DISK: local
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - laravel_storage:/var/www/html/storage/app
+    networks:
+      - app-internal
+
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:?Set POSTGRES_DB in .env.production}
+      POSTGRES_USER: ${POSTGRES_USER:?Set POSTGRES_USER in .env.production}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in .env.production}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\""]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - app-internal
+
+volumes:
+  caddy_data:
+  caddy_config:
+  laravel_storage:
+  postgres_data:
+
+networks:
+  proxy:
+  app-internal:

@@ -11,7 +11,7 @@ class ProjectMessageController extends Controller
     public function store(Request $r, Project $project)
     {
         $this->authorize('view', $project);
-        $admin = $r->user()->role === 'admin';
+        $admin = $r->user()->hasPermissionTo('projects.manage');
         $data = $r->validate(['body' => ['required', 'string', 'min:2', 'max:3000']]);
         $internal = $admin && $r->boolean('is_internal'); // internal notes: admins only, never shown to organizations
         $project->messages()->create(['user_id' => $r->user()->id, 'body' => $data['body'], 'is_internal' => $internal]);

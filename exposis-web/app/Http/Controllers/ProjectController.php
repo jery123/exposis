@@ -11,7 +11,18 @@ class ProjectController extends Controller
 {
     public function index()
     {
-        return view('projects.index', ['projects' => auth()->user()->projects()->latest()->paginate(15)]);
+        $user = auth()->user();
+        $activeStatuses = ['submitted', 'in_review', 'needs_info'];
+        $resolvedStatuses = ['evaluated', 'accepted', 'declined'];
+
+        return view('projects.index', [
+            'projects' => $user->projects()->latest()->paginate(12),
+            'stats' => [
+                'total' => $user->projects()->count(),
+                'active' => $user->projects()->whereIn('status', $activeStatuses)->count(),
+                'resolved' => $user->projects()->whereIn('status', $resolvedStatuses)->count(),
+            ],
+        ]);
     }
 
     public function create() { return view('projects.create'); }

@@ -17,12 +17,18 @@
       <li><b>Confidentialité respectée</b><span>Un NDA pourra être convenu avant le partage d’informations sensibles.</span></li>
     </ul>
   </div>
-  <form id="f" method="POST" action="{{ route('public.submissions.store') }}">
+  <form id="f" class="public-submission-form" method="POST" action="{{ route('public.submissions.store') }}">
     @csrf
     @php $f = 'w-full'; @endphp
+    <div class="public-form-heading">
+      <span>Votre proposition</span>
+      <h2>Présentez votre projet</h2>
+      <p>Les champs marqués d’un * sont obligatoires.</p>
+    </div>
     @if ($errors->any())
       <p class="form-alert" role="alert">Vérifiez les champs signalés puis renvoyez votre demande.</p>
     @endif
+    <div class="public-form-section"><span>01</span><strong>Vous contacter</strong></div>
     <div>
       <label for="contact_name">Votre nom *</label>
       <input id="contact_name" name="contact_name" autocomplete="name" maxlength="255" value="{{ old('contact_name') }}" required>
@@ -45,6 +51,7 @@
       <input id="contact_organization" name="contact_organization" autocomplete="organization" maxlength="255" value="{{ old('contact_organization') }}">
       @error('contact_organization')<p class="form-error">{{ $message }}</p>@enderror
     </div>
+    <div class="public-form-section"><span>02</span><strong>Le projet</strong></div>
     <div>
       <label for="title">Titre du projet *</label>
       <input id="title" name="title" maxlength="150" value="{{ old('title') }}" required>
@@ -70,6 +77,7 @@
       <textarea id="description" name="description" rows="6" maxlength="5000" required>{{ old('description') }}</textarea>
       @error('description')<p class="form-error">{{ $message }}</p>@enderror
     </div>
+    <div class="public-form-section"><span>03</span><strong>Calendrier et ressources</strong></div>
     <div class="f2">
       <div>
         <label for="timeline">Délai souhaité</label>

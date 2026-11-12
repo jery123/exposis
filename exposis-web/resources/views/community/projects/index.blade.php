@@ -1,28 +1,59 @@
 <x-app-layout>
-  <x-slot name="header"><h1 class="text-xl font-extrabold">Mes projets communautaires</h1></x-slot>
-  <div class="mx-auto max-w-5xl space-y-5 p-6">
-    @if (session('status'))<p class="rounded-lg bg-orange-100 p-3 text-sm font-medium text-orange-900" role="status">{{ session('status') }}</p>@endif
-    <div class="flex flex-wrap items-center justify-between gap-3">
-      <p class="max-w-2xl text-gray-600">Partagez vos projets avec la communauté. Chaque proposition est relue par l’équipe avant sa publication.</p>
-      <a href="{{ route('community.projects.create') }}" class="rounded-xl bg-orange-600 px-5 py-2.5 font-semibold text-white hover:bg-orange-700">Proposer un projet</a>
-    </div>
-    <ul class="divide-y rounded-2xl border bg-white">
-      @forelse ($projects as $project)
-        <li class="flex flex-wrap items-center justify-between gap-3 p-5">
-          <div>
-            <p class="font-bold">{{ $project->title }}</p>
-            <p class="text-sm text-gray-600">{{ $project->pole }} · {{ $project->status }}</p>
+  <main class="project-submit-page community-submissions">
+    <div class="project-submit-page__container">
+      @if (session('status'))
+        <p class="community-submissions__status" role="status">{{ session('status') }}</p>
+      @endif
+      <header class="project-submit-page__hero">
+        <span class="project-submit-page__eyebrow"><span aria-hidden="true"></span> Espace membre · Communauté</span>
+        <h1>Mes projets<br><em>à partager.</em></h1>
+        <p>Suivez vos propositions et transmettez leur rapport. Chaque projet et chaque rapport est examiné avant d’être rendu accessible aux visiteurs.</p>
+        <a class="community-submissions__new" href="{{ route('community.projects.create') }}">Proposer un projet <span aria-hidden="true">↗</span></a>
+      </header>
+
+      <div class="community-submissions__list">
+        @forelse ($projects as $project)
+          <article class="community-submission-card">
+            <div class="community-submission-card__summary">
+              <div>
+                <span class="community-submission-card__eyebrow">{{ $project->pole }} · {{ $project->status }} · {{ $project->images_count }} image(s)</span>
+                <h2>{{ $project->title }}</h2>
+                @if ($project->report)
+                  <p class="community-submission-card__report">
+                    Rapport : {{ $project->report->original_name }} ·
+                    {{ $project->report->approved_at ? 'validé pour le public' : 'en attente de validation' }}
+                  </p>
+                @else
+                  <p class="community-submission-card__report">Aucun rapport transmis pour le moment.</p>
+                @endif
+              </div>
+              <a class="community-submission-card__badge {{ $project->published_at ? 'community-submission-card__badge--published' : '' }}" href="{{ route('community.projects.show', $project) }}">
+                {{ $project->published_at ? 'Publié · Voir mon projet' : 'En cours de validation · Voir mon projet' }}
+              </a>
+            </div>
+            <form method="POST" enctype="multipart/form-data" action="{{ route('community.projects.report.store', $project) }}" class="community-report-form">
+              @csrf
+              <div class="project-submit-form__field">
+                <label for="report-{{ $project->id }}">{{ $project->report ? 'Remplacer le rapport' : 'Ajouter le rapport' }}</label>
+                <input id="report-{{ $project->id }}" type="file" name="report" accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document" required>
+                <span class="project-submit-form__hint">PDF ou DOCX · 20 Mo maximum. Tout nouveau fichier doit être revalidé avant sa mise en ligne.</span>
+                @foreach ($errors->get('report') as $message)
+                  <span class="text-red-600" role="alert">{{ $message }}</span>
+                @endforeach
+              </div>
+              <button class="community-report-form__submit" type="submit">Envoyer le rapport <span aria-hidden="true">↗</span></button>
+            </form>
+          </article>
+        @empty
+          <div class="community-submissions__empty">
+            <span aria-hidden="true">∞</span>
+            <h2>Votre première contribution commence ici.</h2>
+            <p>Présentez un projet terminé ou en cours et partagez sa documentation avec la communauté.</p>
+            <a class="community-submissions__new" href="{{ route('community.projects.create') }}">Proposer un projet <span aria-hidden="true">↗</span></a>
           </div>
-          @if ($project->published_at)
-            <a class="rounded-full border border-emerald-700 px-3 py-1 text-sm font-semibold text-emerald-800" href="{{ route('public.projects.show', $project) }}">Publié · Voir le projet</a>
-          @else
-            <span class="rounded-full border border-orange-700 px-3 py-1 text-sm font-semibold text-orange-800">En cours de validation</span>
-          @endif
-        </li>
-      @empty
-        <li class="p-6 text-gray-600">Vous n’avez pas encore proposé de projet.</li>
-      @endforelse
-    </ul>
-    <div>{{ $projects->links() }}</div>
-  </div>
+        @endforelse
+      </div>
+      <div class="community-submissions__pagination">{{ $projects->links() }}</div>
+    </div>
+  </main>
 </x-app-layout>
