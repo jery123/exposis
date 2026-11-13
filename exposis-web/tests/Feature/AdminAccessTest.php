@@ -63,6 +63,16 @@ class AdminAccessTest extends TestCase
         $this->actingAs($member)->get(route('admin.roles.index'))->assertForbidden();
     }
 
+    public function test_a_visitor_download_permission_does_not_grant_admin_access(): void
+    {
+        $role = Role::where('slug', 'visitor')->firstOrFail();
+        $visitor = User::factory()->create(['role' => 'visitor', 'role_id' => $role->id]);
+
+        $this->assertTrue($visitor->hasPermissionTo('community_projects.download_pdf'));
+        $this->assertFalse($visitor->hasPermissionTo('admin.access'));
+        $this->actingAs($visitor)->get(route('admin.dashboard'))->assertForbidden();
+    }
+
     public function test_admin_cannot_remove_their_own_role_or_the_last_administrator(): void
     {
         $adminRole = Role::where('slug', 'admin')->firstOrFail();

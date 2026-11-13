@@ -52,21 +52,18 @@ class User extends Authenticatable
         $role = $this->accessRole;
 
         if ($role) {
-            $permissions = $role->permissions;
-
-            if ($permissions->contains('slug', $permission)) {
-                return true;
-            }
-
-            return $permission === 'admin.access'
-                && $permissions->contains(fn (Permission $assigned) => $assigned->slug !== 'admin.access');
+            return $role->permissions->contains('slug', $permission);
         }
 
-        return $this->role === 'admin';
+        return $this->role === 'admin' && $permission === 'admin.access';
     }
 
     public function roleLabel(): string
     {
-        return $this->accessRole?->name ?? ($this->role === 'admin' ? 'Administrateur' : 'Membre');
+        return $this->accessRole?->name ?? match ($this->role) {
+            'admin' => 'Administrateur',
+            'visitor' => 'Visiteur',
+            default => 'Membre',
+        };
     }
 }

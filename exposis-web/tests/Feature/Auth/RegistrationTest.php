@@ -10,6 +10,9 @@ test('registration screen can be rendered', function () {
         ->assertSee('href="/login"', escape: false);
 });
 
+use App\Models\Role;
+use App\Models\User;
+
 test('new users can register', function () {
     $response = $this->post('/register', [
         'name' => 'Test User',
@@ -21,4 +24,11 @@ test('new users can register', function () {
 
     $this->assertAuthenticated();
     $response->assertRedirect(route('dashboard', absolute: false));
+
+    $visitorRole = Role::where('slug', 'visitor')->firstOrFail();
+    $this->assertDatabaseHas('users', [
+        'email' => 'test@example.com',
+        'role' => 'visitor',
+        'role_id' => $visitorRole->id,
+    ]);
 });

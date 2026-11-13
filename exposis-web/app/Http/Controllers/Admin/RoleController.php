@@ -65,12 +65,14 @@ class RoleController extends Controller
 
         $data = $this->validatedData($request);
         $permissionIds = $data['permission_ids'] ?? [];
-        $roleHasAdminAccess = $role->permissions()->where('slug', '!=', 'admin.access')->exists();
+        $roleHasAdminAccess = $role->permissions()->where('slug', 'admin.access')->exists();
         $willHaveAdminAccess = Permission::whereIn('id', $permissionIds)
-            ->where('slug', '!=', 'admin.access')
+            ->where('slug', 'admin.access')
             ->exists();
-        $otherAdminCount = User::where('role_id', '!=', $role->id)
-            ->whereHas('accessRole.permissions', fn ($query) => $query->where('slug', '!=', 'admin.access'))
+        $otherAdminCount = User::where(fn ($users) => $users->whereNull('role_id')->orWhere('role_id', '!=', $role->id))
+            ->where(fn ($users) => $users
+                ->whereHas('accessRole.permissions', fn ($query) => $query->where('slug', 'admin.access'))
+                ->orWhere(fn ($legacy) => $legacy->whereNull('role_id')->where('role', 'admin')))
             ->count();
 
         if ($roleHasAdminAccess && ! $willHaveAdminAccess && $otherAdminCount === 0 && $role->users()->exists()) {

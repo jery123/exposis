@@ -46,12 +46,13 @@ class UserRoleController extends Controller
 
         $currentlyAdmin = $user->hasPermissionTo('admin.access');
         $willBeAdmin = $role->permissions()->where('slug', 'admin.access')->exists();
-        $adminCount = User::whereHas(
-            'accessRole.permissions',
-            fn ($query) => $query->where('slug', '!=', 'admin.access')
-        )->count();
+        $otherAdminCount = User::whereKeyNot($user->getKey())
+            ->where(fn ($users) => $users
+                ->whereHas('accessRole.permissions', fn ($query) => $query->where('slug', 'admin.access'))
+                ->orWhere(fn ($legacy) => $legacy->whereNull('role_id')->where('role', 'admin')))
+            ->count();
 
-        if ($currentlyAdmin && ! $willBeAdmin && $adminCount <= 1) {
+        if ($currentlyAdmin && ! $willBeAdmin && $otherAdminCount === 0) {
             throw ValidationException::withMessages([
                 'role_id' => 'Le dernier administrateur doit rester actif.',
             ]);
