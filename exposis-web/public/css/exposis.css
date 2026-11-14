@@ -138,3 +138,25 @@ footer .brand{color:#fff;display:inline-block;margin:0 0 8px}.cp{margin-top:32px
 .public-submission-form .chk{font-size:.9rem;line-height:1.55}
 .public-submission-form .field-note{line-height:1.65}
 @media(max-width:600px){#f{box-shadow:6px 6px 0 var(--o)}.public-form-heading h2{font-size:1.55rem}.public-form-section{padding-top:15px}}
+
+.about-hero{position:relative;display:flex;min-height:184px;align-items:center;overflow:hidden;padding-block:0;background:radial-gradient(ellipse at 82% 45%,rgba(245,139,74,.44),transparent 36%),linear-gradient(110deg,#34251d,#72513e 58%,#352b29);color:#fff}
+.about-hero::after{position:absolute;top:-110px;right:12%;width:360px;height:360px;border:1px solid rgba(255,255,255,.16);border-radius:50%;box-shadow:0 0 0 44px rgba(255,255,255,.035),0 0 0 88px rgba(255,255,255,.025);content:""}
+.about-hero .w{display:flex;width:100%;align-items:center}
+.about-hero h1{position:relative;z-index:1;font-size:clamp(2.4rem,6vw,3.5rem);letter-spacing:-.06em;text-transform:uppercase}
+.about-intro{padding-block:62px 70px;background:var(--paper)}
+.about-copy{max-width:610px}
+.about-copy h2,.about-team-heading h2{font-size:clamp(1.55rem,3vw,1.95rem);letter-spacing:-.025em}
+.about-copy p{margin-top:16px;color:#55564f;font-size:.88rem;line-height:1.65}
+.about-copy h2+p{margin-top:21px}
+.about-team{padding-block:62px 76px;background:#f1f3f9}
+.about-team-heading{margin-bottom:28px}
+.about-team-heading p{max-width:570px;margin-top:10px;color:var(--mute);font-size:.8rem;line-height:1.7}
+.about-team-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:48px;row-gap:30px}
+.about-member{min-width:0}
+.about-member-top{display:grid;grid-template-columns:78px minmax(0,1fr);align-items:center;gap:18px}
+.about-member-portrait{display:grid;width:78px;aspect-ratio:1;place-items:center;background:#d7dce5;color:#777e8d;font:700:.95rem var(--d)}
+.about-member h3{font-size:.95rem;font-weight:600;letter-spacing:-.02em}
+.about-member-role{margin-top:4px;color:#526284;font-size:.65rem;line-height:1.5}
+.about-member-bio{margin-top:13px;color:#62656e;font-size:.72rem;line-height:1.65}
+@media(max-width:600px){.about-team-grid{grid-template-columns:1fr;row-gap:24px}.about-member-top{grid-template-columns:68px minmax(0,1fr);gap:14px}.about-member-portrait{width:68px}}
+@media(max-width:600px){.about-hero{min-height:150px}.about-hero::after{right:-120px}.about-intro{padding-block:43px 48px}.about-team{padding-block:43px 50px}}

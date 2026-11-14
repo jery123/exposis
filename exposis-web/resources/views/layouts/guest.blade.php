@@ -11,7 +11,7 @@
     <a class="auth-skip" href="#auth-main">Aller au formulaire</a>
     <header class="auth-header">
         <a class="auth-brand" href="/" aria-label="EXPOSIS, accueil">
-            <img src="/images/exposis-logo-orange.jpeg" alt="EXPOSIS">
+            <img src="/images/exposis-logo-orange.png" alt="EXPOSIS">
         </a>
         <a class="auth-back" href="/">Retour au site <span aria-hidden="true">↗</span></a>
     </header>
@@ -24,7 +24,7 @@
         </aside>
         <section class="auth-panel" aria-label="Espace membre">
             <a class="auth-panel-logo" href="/" aria-label="Accueil EXPOSIS">
-                <img src="/images/exposis-logo-orange.jpeg" alt="EXPOSIS">
+                <img src="/images/exposis-logo-orange.png" alt="EXPOSIS">
             </a>
             {{ $slot }}
         </section>

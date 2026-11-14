@@ -15,7 +15,7 @@
 <body>
 <a class="sr" href="#main">Aller au contenu</a>
 <header><div class="w">
-  <a class="brand" href="{{ route('home') }}" aria-label="EXPOSIS, accueil"><img src="{{ asset('images/exposis-logo-orange.jpeg') }}" alt="EXPOSIS"><span class="sr">Accueil</span></a>
+  <a class="brand" href="{{ route('home') }}" aria-label="EXPOSIS, accueil"><img src="{{ asset('images/exposis-logo-orange.png') }}" alt="EXPOSIS"><span class="sr">Accueil</span></a>
   <button class="burger" id="bg" aria-label="Menu" aria-expanded="false" aria-controls="nv">☰</button>
   <nav id="nv" aria-label="Navigation principale">
     <a @if(request()->routeIs('home')) aria-current="page" @endif href="{{ route('home') }}">Accueil</a>
@@ -37,7 +37,7 @@
 @yield('content')
 </main>
 <footer class="dk"><div class="w"><div class="fg">
-  <div><a class="brand" href="{{ route('home') }}"><img src="{{ asset('images/exposis-logo-white.jpeg') }}" alt="EXPOSIS"></a><p style="color:#bdb6ad;font-size:.95rem">Laboratoire de Recherche, d’Expérimentation et d’Innovation en Informatique.</p></div>
+  <div><a class="brand" href="{{ route('home') }}"><img src="{{ asset('images/exposis-logo-white.png') }}" alt="EXPOSIS"></a><p style="color:#bdb6ad;font-size:.95rem">Laboratoire de Recherche, d’Expérimentation et d’Innovation en Informatique.</p></div>
   <div><h3>Liens</h3><a href="{{ route('home') }}">Accueil</a><a href="{{ route('about') }}">À propos</a><a href="{{ route('services') }}">Services</a><a href="{{ route('public.projects.index') }}">Projets</a><a href="{{ route('contact') }}">Contact</a></div>
   <div><h3>Contact</h3><a href="mailto:contact-lab@exposis.net">contact-lab@exposis.net</a><a href="{{ route('public.submissions.create') }}">Soumettre un projet</a></div></div>
   <p class="cp">© {{ date('Y') }} EXPOSIS. Organisation à but non lucratif. <a href="{{ route('legal') }}" style="display:inline">Mentions légales</a>.</p></div></footer>
