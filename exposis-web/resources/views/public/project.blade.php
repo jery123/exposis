@@ -12,7 +12,7 @@
       <ul>@foreach ($project->team_members as $member)<li>{{ $member }}</li>@endforeach</ul>
     </section>
   @endif
-  <div class="prose">{!! \Illuminate\Support\Str::markdown($project->body, ['html_input' => 'strip', 'allow_unsafe_links' => false]) !!}</div>
+  <div class="prose">{!! \App\Support\ProjectBody::render($project->body) !!}</div>
   @if ($project->images->isNotEmpty())
     <section class="project-gallery" aria-label="Images du projet">
       @foreach ($project->images as $index => $image)

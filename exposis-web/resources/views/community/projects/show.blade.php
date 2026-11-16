@@ -16,7 +16,7 @@
       <article class="community-project-detail">
         <section aria-labelledby="project-description-heading">
           <h2 id="project-description-heading">Description du projet</h2>
-          <div class="community-project-detail__body">{!! \Illuminate\Support\Str::markdown($project->body, ['html_input' => 'strip', 'allow_unsafe_links' => false]) !!}</div>
+          <div class="community-project-detail__body">{!! \App\Support\ProjectBody::render($project->body) !!}</div>
         </section>
 
         @if ($project->team_members)
@@ -54,6 +54,7 @@
           <h2 id="project-report-heading">Rapport du projet</h2>
           @if ($project->report)
             <p>{{ $project->report->original_name }} · {{ $project->report->approved_at ? 'Validé pour le public' : 'En attente de validation' }}</p>
+            <a class="community-project-detail__public-link" href="{{ route('community.projects.report.download', $project) }}">Télécharger mon rapport <span aria-hidden="true">↓</span></a>
           @else
             <p>Aucun rapport transmis pour le moment.</p>
           @endif

@@ -41,6 +41,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/communaute/projets/nouveau', [CommunityProjectController::class, 'create'])->name('community.projects.create');
     Route::post('/communaute/projets', [CommunityProjectController::class, 'store'])->middleware('throttle:10,10')->name('community.projects.store');
     Route::get('/communaute/projets/{project:slug}', [CommunityProjectController::class, 'show'])->name('community.projects.show');
+    Route::get('/communaute/projets/{project:slug}/rapport', [CommunityProjectController::class, 'downloadReport'])->name('community.projects.report.download');
     Route::get('/communaute/projets/{project:slug}/images/{image}', [CommunityProjectController::class, 'image'])->name('community.projects.images.show');
     Route::post('/communaute/projets/{project:slug}/rapport', [CommunityProjectController::class, 'storeReport'])
         ->middleware('throttle:10,10')

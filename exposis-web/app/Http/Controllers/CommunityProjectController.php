@@ -4,15 +4,16 @@ namespace App\Http\Controllers;
 
 use App\Models\PublicProject;
 use App\Models\PublicProjectImage;
-use App\Models\PublicProjectReport;
 use App\Notifications\CommunityProjectSubmitted;
+use App\Support\ProjectBody;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class CommunityProjectController extends Controller
 {
@@ -49,6 +50,19 @@ class CommunityProjectController extends Controller
         ]);
     }
 
+    public function downloadReport(Request $request, PublicProject $project)
+    {
+        abort_unless($project->user_id === $request->user()->id, 403);
+
+        $report = $project->report;
+        abort_unless($report && Storage::disk('local')->exists($report->path), 404);
+
+        return Storage::disk('local')->download($report->path, $report->original_name, [
+            'Cache-Control' => 'private, no-store',
+            'X-Content-Type-Options' => 'nosniff',
+        ]);
+    }
+
     public function store(Request $request)
     {
         $data = $request->validate([
@@ -64,6 +78,12 @@ class CommunityProjectController extends Controller
             'images.*' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
             'report' => ['nullable', 'file', 'mimes:pdf,docx', 'max:20480'],
         ]);
+        $data['body'] = ProjectBody::sanitize($data['body']);
+        if (trim(strip_tags($data['body'])) === '') {
+            throw ValidationException::withMessages([
+                'body' => 'La description du projet est obligatoire.',
+            ]);
+        }
 
         $imageFiles = $request->file('images', []);
         $reportFile = $request->file('report');

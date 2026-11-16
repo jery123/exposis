@@ -168,7 +168,70 @@ class ProjectAccessTest extends TestCase
             ->assertSee('Terminé')
             ->assertSee('enctype="multipart/form-data"', false)
             ->assertSee('name="images[]"', false)
-            ->assertSee('Lien du projet');
+            ->assertSee('Lien du projet')
+            ->assertSee('data-rich-text-editor', false)
+            ->assertSee('data-command="bold"', false);
+    }
+
+    public function test_member_project_rich_text_is_sanitized_before_it_is_saved_and_rendered(): void
+    {
+        $member = User::factory()->create();
+
+        $this->actingAs($member)->post(route('community.projects.store'), [
+            'title' => 'Projet avec mise en forme',
+            'pole' => 'Formation',
+            'status' => 'Terminé',
+            'summary' => 'Un projet de formation terminé.',
+            'body' => '<h2>Résultats</h2><p><strong>Validé</strong><script>alert(1)</script><a href="javascript:alert(1)">lien</a></p>',
+            'participant_consent' => '1',
+        ])->assertRedirect(route('community.projects.index'));
+
+        $project = PublicProject::firstOrFail();
+        $this->assertStringContainsString('<h2>Résultats</h2>', $project->body);
+        $this->assertStringContainsString('<strong>Validé</strong>', $project->body);
+        $this->assertStringNotContainsString('<script', $project->body);
+        $this->assertStringNotContainsString('javascript:', $project->body);
+
+        $this->actingAs($member)
+            ->get(route('community.projects.show', $project))
+            ->assertOk()
+            ->assertSee('<h2>Résultats</h2>', false)
+            ->assertDontSee('alert(1)', false);
+    }
+
+    public function test_project_owner_can_download_the_private_report_from_their_project_section(): void
+    {
+        Storage::fake('local');
+        $member = User::factory()->create();
+        $project = $member->publicProjects()->create([
+            'slug' => 'projet-documente',
+            'title' => 'Projet documenté',
+            'pole' => 'Formation',
+            'status' => 'Terminé',
+            'summary' => 'Un projet de formation terminé.',
+            'body' => 'Description du projet.',
+        ]);
+        $report = $project->report()->create([
+            'path' => 'community-projects/'.$project->id.'/reports/rapport.pdf',
+            'original_name' => 'rapport.pdf',
+        ]);
+        Storage::disk('local')->put($report->path, 'document privé');
+        $downloadUrl = route('community.projects.report.download', $project);
+
+        $this->actingAs($member)
+            ->get(route('community.projects.index'))
+            ->assertOk()
+            ->assertSee($downloadUrl);
+        $this->get(route('community.projects.show', $project))
+            ->assertOk()
+            ->assertSee($downloadUrl);
+        $this->get($downloadUrl)
+            ->assertOk()
+            ->assertDownload('rapport.pdf')
+        ->assertHeader('Cache-Control', 'no-store, private');
+        $this->actingAs(User::factory()->create())
+            ->get($downloadUrl)
+            ->assertForbidden();
     }
 
     public function test_guest_cannot_access_the_member_session_endpoint(): void
@@ -325,6 +388,13 @@ class ProjectAccessTest extends TestCase
         $this->assertNull($originalReport->approved_at);
         Storage::disk('local')->assertExists($originalReport->path);
         Storage::disk('public')->assertMissing($originalReport->path);
+        $this->actingAs($member)
+            ->get(route('community.projects.report.download', $project))
+            ->assertOk()
+            ->assertDownload('rapport.pdf');
+        $this->actingAs(User::factory()->create())
+            ->get(route('community.projects.report.download', $project))
+            ->assertForbidden();
         $this->get("/api/public/projects/{$project->slug}/report")->assertNotFound();
 
         $project->update(['published_at' => now()->subMinute()]);

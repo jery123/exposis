@@ -23,6 +23,7 @@
                     Rapport : {{ $project->report->original_name }} ·
                     {{ $project->report->approved_at ? 'validé pour le public' : 'en attente de validation' }}
                   </p>
+                  <a class="community-project-detail__public-link" href="{{ route('community.projects.report.download', $project) }}">Télécharger mon rapport</a>
                 @else
                   <p class="community-submission-card__report">Aucun rapport transmis pour le moment.</p>
                 @endif
