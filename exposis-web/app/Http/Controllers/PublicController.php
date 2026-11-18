@@ -80,8 +80,9 @@ class PublicController extends Controller
         ]);
     }
 
-    public function projectReport(PublicProject $project)
+    public function projectReport(Request $request, PublicProject $project)
     {
+        abort_unless($request->user()?->hasPermissionTo('community_projects.download_pdf'), 403);
         abort_unless($project->published_at && $project->published_at->isPast(), 404);
 
         $report = $project->report;
@@ -89,7 +90,7 @@ class PublicController extends Controller
         abort_unless(Storage::disk('local')->exists($report->path), 404);
 
         return Storage::disk('local')->download($report->path, $report->original_name, [
-            'Cache-Control' => 'public, max-age=3600',
+            'Cache-Control' => 'private, no-store',
             'X-Content-Type-Options' => 'nosniff',
         ]);
     }

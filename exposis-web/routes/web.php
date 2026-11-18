@@ -13,6 +13,7 @@ use App\Http\Controllers\ProjectMessageController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PublicController;
 use App\Http\Controllers\SitemapController;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/sitemap.xml', SitemapController::class)->name('sitemap');
@@ -22,6 +23,12 @@ Route::get('/a-propos', [PublicController::class, 'about'])->name('about');
 Route::get('/services', [PublicController::class, 'services'])->name('services');
 Route::get('/projets', [PublicController::class, 'projects'])->name('public.projects.index');
 Route::get('/projets/{project:slug}', [PublicController::class, 'project'])->name('public.projects.show');
+Route::get('/projets/{project:slug}/rapport', [PublicController::class, 'projectReport'])
+    ->middleware('auth')
+    ->name('public.projects.report.download');
+Route::get('/api/public/projects/{project:slug}/report', [PublicController::class, 'projectReport'])
+    ->middleware('auth')
+    ->name('api.public.projects.report.download');
 Route::get('/contact', [PublicController::class, 'contact'])->name('contact');
 Route::get('/mentions-legales', [PublicController::class, 'legal'])->name('legal');
 
@@ -31,7 +38,9 @@ Route::get('/soumission-recue', fn () => session()->has('submission_reference')
     ? view('public.submission-received', ['reference' => session('submission_reference')])
     : redirect()->route('home'))->name('public.submissions.received');
 
-Route::get('/dashboard', fn () => redirect()->route('projects.index'))->middleware('auth')->name('dashboard');
+Route::get('/dashboard', fn (Request $request) => redirect()->route(
+    $request->user()->hasPermissionTo('admin.access') ? 'admin.dashboard' : 'projects.index'
+))->middleware('auth')->name('dashboard');
 
 Route::middleware('auth')->group(function () {
     Route::get('/api/community/session', fn (\Illuminate\Http\Request $request) => response()->json([

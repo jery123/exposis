@@ -3,9 +3,11 @@ namespace Tests\Feature;
 
 use App\Models\Project;
 use App\Models\PublicProject;
+use App\Models\Role;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
@@ -79,12 +81,18 @@ class ProjectAccessTest extends TestCase
         $p = $a->projects()->create($this->payload(['consent' => null]));
         $this->actingAs($b)->get(route('projects.show', $p))->assertForbidden();
         $this->actingAs($a)->get(route('projects.show', $p))->assertOk();
+
+        $adminRole = Role::where('slug', 'admin')->firstOrFail();
+        $admin = User::factory()->create(['role' => 'admin', 'role_id' => $adminRole->id]);
+        $this->actingAs($admin)->get(route('projects.show', $p))->assertForbidden();
     }
 
     public function test_org_cannot_reach_admin(): void
     {
         $this->actingAs(User::factory()->create())->get('/admin/projects')->assertForbidden();
-        $this->actingAs(User::factory()->create(['role' => 'admin']))->get('/admin/projects')->assertOk();
+        $adminRole = Role::where('slug', 'admin')->firstOrFail();
+        $admin = User::factory()->create(['role' => 'admin', 'role_id' => $adminRole->id]);
+        $this->actingAs($admin)->get('/admin/projects')->assertOk();
     }
 
     public function test_honeypot_blocks_submission(): void
@@ -122,7 +130,8 @@ class ProjectAccessTest extends TestCase
             ->assertOk()
             ->assertSee($project->reference);
 
-        $admin = User::factory()->create(['role' => 'admin']);
+        $adminRole = Role::where('slug', 'admin')->firstOrFail();
+        $admin = User::factory()->create(['role' => 'admin', 'role_id' => $adminRole->id]);
         $this->actingAs($admin)->get('/admin')->assertOk()->assertSee('Projet test');
         $this->actingAs($admin)->get(route('admin.projects.export'))->assertOk();
     }
@@ -289,7 +298,9 @@ class ProjectAccessTest extends TestCase
         $this->actingAs($member)
             ->get(route('admin.public-projects.images.show', [$project, $image]))
             ->assertForbidden();
-        $this->actingAs(User::factory()->create(['role' => 'admin']))
+        $adminRole = Role::where('slug', 'admin')->firstOrFail();
+        $admin = User::factory()->create(['role' => 'admin', 'role_id' => $adminRole->id]);
+        $this->actingAs($admin)
             ->get(route('admin.public-projects.images.show', [$project, $image]))
             ->assertOk()
             ->assertHeader('Content-Type', 'image/png');
@@ -370,7 +381,10 @@ class ProjectAccessTest extends TestCase
         Storage::fake('local');
         Storage::fake('public');
         $member = User::factory()->create();
-        $admin = User::factory()->create(['role' => 'admin']);
+        $adminRole = Role::where('slug', 'admin')->firstOrFail();
+        $admin = User::factory()->create(['role' => 'admin', 'role_id' => $adminRole->id]);
+        $visitorRole = Role::where('slug', 'visitor')->firstOrFail();
+        $visitor = User::factory()->create(['role' => 'visitor', 'role_id' => $visitorRole->id]);
 
         $this->actingAs($member)->post(route('community.projects.store'), [
             'title' => 'Documentation du projet',
@@ -388,6 +402,9 @@ class ProjectAccessTest extends TestCase
         $this->assertNull($originalReport->approved_at);
         Storage::disk('local')->assertExists($originalReport->path);
         Storage::disk('public')->assertMissing($originalReport->path);
+        Auth::logout();
+        $this->get(route('public.projects.report.download', $project))
+            ->assertRedirect(route('login'));
         $this->actingAs($member)
             ->get(route('community.projects.report.download', $project))
             ->assertOk()
@@ -395,10 +412,17 @@ class ProjectAccessTest extends TestCase
         $this->actingAs(User::factory()->create())
             ->get(route('community.projects.report.download', $project))
             ->assertForbidden();
-        $this->get("/api/public/projects/{$project->slug}/report")->assertNotFound();
+        $this->actingAs($visitor)
+            ->get(route('public.projects.report.download', $project))
+            ->assertNotFound();
+        $this->actingAs($visitor)
+            ->get(route('api.public.projects.report.download', $project))
+            ->assertNotFound();
 
         $project->update(['published_at' => now()->subMinute()]);
-        $this->get("/api/public/projects/{$project->slug}/report")->assertNotFound();
+        $this->actingAs($visitor)
+            ->get(route('public.projects.report.download', $project))
+            ->assertNotFound();
         $this->getJson("/api/public/projects/{$project->slug}")
             ->assertOk()
             ->assertJsonPath('project.has_report', false)
@@ -419,7 +443,13 @@ class ProjectAccessTest extends TestCase
 
         $project->refresh()->load('report');
         $this->assertNotNull($project->report->approved_at);
-        $this->get("/api/public/projects/{$project->slug}/report")
+        $this->actingAs($visitor)
+            ->get(route('public.projects.report.download', $project))
+            ->assertOk()
+            ->assertDownload('rapport.pdf')
+            ->assertHeader('Cache-Control', 'no-store, private');
+        $this->actingAs($visitor)
+            ->get(route('api.public.projects.report.download', $project))
             ->assertOk()
             ->assertDownload('rapport.pdf');
         $this->getJson("/api/public/projects/{$project->slug}")
@@ -435,7 +465,9 @@ class ProjectAccessTest extends TestCase
         $this->assertNull($project->report->approved_at);
         Storage::disk('local')->assertMissing($originalReport->path);
         Storage::disk('local')->assertExists($project->report->path);
-        $this->get("/api/public/projects/{$project->slug}/report")->assertNotFound();
+        $this->actingAs($visitor)
+            ->get(route('public.projects.report.download', $project))
+            ->assertNotFound();
         $this->getJson("/api/public/projects/{$project->slug}")
             ->assertOk()
             ->assertJsonPath('project.has_report', false)

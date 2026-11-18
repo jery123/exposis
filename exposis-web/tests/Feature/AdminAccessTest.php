@@ -14,7 +14,8 @@ class AdminAccessTest extends TestCase
 
     public function test_admin_workspace_has_dedicated_navigation_and_role_management(): void
     {
-        $admin = User::factory()->create(['role' => 'admin']);
+        $adminRole = Role::where('slug', 'admin')->firstOrFail();
+        $admin = User::factory()->create(['role' => 'admin', 'role_id' => $adminRole->id]);
 
         $this->actingAs($admin)
             ->get(route('admin.dashboard'))
@@ -28,9 +29,20 @@ class AdminAccessTest extends TestCase
             ->assertForbidden();
     }
 
+    public function test_dashboard_sends_admins_to_their_workspace_and_members_to_their_own(): void
+    {
+        $adminRole = Role::where('slug', 'admin')->firstOrFail();
+        $admin = User::factory()->create(['role' => 'admin', 'role_id' => $adminRole->id]);
+        $member = User::factory()->create();
+
+        $this->actingAs($admin)->get(route('dashboard'))->assertRedirect(route('admin.dashboard'));
+        $this->actingAs($member)->get(route('dashboard'))->assertRedirect(route('projects.index'));
+    }
+
     public function test_admin_can_create_a_role_with_selected_permissions(): void
     {
-        $admin = User::factory()->create(['role' => 'admin']);
+        $adminRole = Role::where('slug', 'admin')->firstOrFail();
+        $admin = User::factory()->create(['role' => 'admin', 'role_id' => $adminRole->id]);
         $permission = Permission::where('slug', 'projects.manage')->firstOrFail();
 
         $this->actingAs($admin)->post(route('admin.roles.store'), [
@@ -91,13 +103,17 @@ class AdminAccessTest extends TestCase
 
     public function test_admin_can_assign_a_role_to_another_account(): void
     {
-        $admin = User::factory()->create(['role' => 'admin']);
+        $adminRole = Role::where('slug', 'admin')->firstOrFail();
+        $admin = User::factory()->create(['role' => 'admin', 'role_id' => $adminRole->id]);
         $member = User::factory()->create();
         $role = Role::create([
             'name' => 'Gestionnaire des projets',
             'slug' => 'gestionnaire-des-projets',
         ]);
-        $role->permissions()->sync([Permission::where('slug', 'projects.manage')->value('id')]);
+        $role->permissions()->sync([
+            Permission::where('slug', 'projects.manage')->value('id'),
+            Permission::where('slug', 'admin.access')->value('id'),
+        ]);
 
         $this->actingAs($admin)
             ->patch(route('admin.users.role.update', $member), ['role_id' => $role->id])
@@ -117,6 +133,7 @@ class AdminAccessTest extends TestCase
         $role->permissions()->sync([
             Permission::where('slug', 'roles.manage')->value('id'),
             Permission::where('slug', 'dashboard.view')->value('id'),
+            Permission::where('slug', 'admin.access')->value('id'),
         ]);
         $admin = User::factory()->create(['role' => $role->slug, 'role_id' => $role->id]);
 
@@ -128,6 +145,6 @@ class AdminAccessTest extends TestCase
             ])
             ->assertSessionHasErrors('permission_ids');
 
-        $this->assertSame(2, $role->fresh()->permissions()->count());
+        $this->assertSame(3, $role->fresh()->permissions()->count());
     }
 }

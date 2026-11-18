@@ -26,7 +26,13 @@
     <section class="project-report" aria-labelledby="project-report-heading">
       <h2 id="project-report-heading">Rapport du projet</h2>
       <p>Consultez la documentation partagée par l’équipe du projet.</p>
-      <a class="btn g" href="{{ url("/api/public/projects/{$project->slug}/report") }}" download>Télécharger le rapport ({{ strtoupper(pathinfo($project->report->original_name, PATHINFO_EXTENSION)) }})</a>
+      <a class="btn g" href="{{ route('public.projects.report.download', $project) }}">
+        @auth
+          Télécharger le rapport ({{ strtoupper(pathinfo($project->report->original_name, PATHINFO_EXTENSION)) }})
+        @else
+          Se connecter pour télécharger le rapport ({{ strtoupper(pathinfo($project->report->original_name, PATHINFO_EXTENSION)) }})
+        @endauth
+      </a>
     </section>
   @endif
   @if ($project->repo_url)<p style="margin-top:32px"><a class="btn g" href="{{ $project->repo_url }}" rel="noopener noreferrer" target="_blank">Voir le projet</a></p>@endif
