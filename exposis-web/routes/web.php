@@ -38,9 +38,19 @@ Route::get('/soumission-recue', fn () => session()->has('submission_reference')
     ? view('public.submission-received', ['reference' => session('submission_reference')])
     : redirect()->route('home'))->name('public.submissions.received');
 
-Route::get('/dashboard', fn (Request $request) => redirect()->route(
-    $request->user()->hasPermissionTo('admin.access') ? 'admin.dashboard' : 'projects.index'
-))->middleware('auth')->name('dashboard');
+Route::get('/dashboard', function (Request $request) {
+    $destination = $request->user()->hasPermissionTo('admin.access')
+        ? route('admin.dashboard', absolute: false)
+        : route('projects.index', absolute: false);
+
+    if ($request->expectsJson()) {
+        return response()->json(['redirectTo' => $destination]);
+    }
+
+    return redirect()->route(
+        $request->user()->hasPermissionTo('admin.access') ? 'admin.dashboard' : 'projects.index'
+    );
+})->middleware('auth')->name('dashboard');
 
 Route::middleware('auth')->group(function () {
     Route::get('/api/community/session', fn (\Illuminate\Http\Request $request) => response()->json([

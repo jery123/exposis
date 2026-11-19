@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Role;
 use App\Models\User;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
@@ -12,7 +13,7 @@ use Illuminate\View\View;
 
 class UserRoleController extends Controller
 {
-    public function index(Request $request): View
+    public function index(Request $request): View|JsonResponse
     {
         $users = User::with('accessRole')
             ->when($request->filled('q'), function ($query) use ($request) {
@@ -25,9 +26,36 @@ class UserRoleController extends Controller
             ->paginate(20)
             ->withQueryString();
 
+        $roles = Role::orderBy('name')->get();
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'users' => $users->getCollection()->map(fn (User $user) => [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'role_id' => $user->role_id,
+                    'role_label' => $user->roleLabel(),
+                    'is_admin' => $user->hasPermissionTo('admin.access'),
+                    'is_current_user' => $request->user()->is($user),
+                ])->values(),
+                'roles' => $roles->map(fn (Role $role) => [
+                    'id' => $role->id,
+                    'name' => $role->name,
+                ])->values(),
+                'pagination' => [
+                    'current_page' => $users->currentPage(),
+                    'last_page' => $users->lastPage(),
+                    'total' => $users->total(),
+                ],
+                'status_message' => session('status'),
+                'errors' => session('errors')?->getBag('default')->messages() ?? [],
+            ]);
+        }
+
         return view('admin.users.index', [
             'users' => $users,
-            'roles' => Role::orderBy('name')->get(),
+            'roles' => $roles,
         ]);
     }
 

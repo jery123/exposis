@@ -9,23 +9,51 @@ use Illuminate\Support\Facades\Log;
 
 class ProjectController extends Controller
 {
-    public function index()
+    public function index(\Illuminate\Http\Request $request)
     {
         $user = auth()->user();
         $activeStatuses = ['submitted', 'in_review', 'needs_info'];
         $resolvedStatuses = ['evaluated', 'accepted', 'declined'];
 
-        return view('projects.index', [
-            'projects' => $user->projects()->latest()->paginate(12),
-            'stats' => [
-                'total' => $user->projects()->count(),
-                'active' => $user->projects()->whereIn('status', $activeStatuses)->count(),
-                'resolved' => $user->projects()->whereIn('status', $resolvedStatuses)->count(),
-            ],
-        ]);
+        $projects = $user->projects()->latest()->paginate(12);
+        $stats = [
+            'total' => $user->projects()->count(),
+            'active' => $user->projects()->whereIn('status', $activeStatuses)->count(),
+            'resolved' => $user->projects()->whereIn('status', $resolvedStatuses)->count(),
+        ];
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'projects' => $projects->getCollection()->map(fn (Project $project) => [
+                    'id' => $project->id,
+                    'reference' => $project->reference,
+                    'title' => $project->title,
+                    'type' => $project->typeLabel(),
+                    'status' => $project->status,
+                    'status_label' => $project->statusLabel(),
+                    'created_at' => $project->created_at?->toIso8601String(),
+                ])->values(),
+                'pagination' => [
+                    'current_page' => $projects->currentPage(),
+                    'last_page' => $projects->lastPage(),
+                    'total' => $projects->total(),
+                ],
+                'stats' => $stats,
+                'status_message' => session('status'),
+            ]);
+        }
+
+        return view('projects.index', compact('projects', 'stats'));
     }
 
-    public function create() { return view('projects.create'); }
+    public function create(\Illuminate\Http\Request $request)
+    {
+        if ($request->expectsJson()) {
+            return response()->json(['types' => Project::TYPES]);
+        }
+
+        return view('projects.create');
+    }
 
     public function publicCreate() { return view('public.submit-project'); }
 
@@ -57,9 +85,41 @@ class ProjectController extends Controller
         return redirect()->route('projects.show', $project)->with('status', 'Merci ! Votre projet a bien été reçu. Aucun droit n’est transféré ; un NDA précède tout travail approfondi.');
     }
 
-    public function show(Project $project)
+    public function show(\Illuminate\Http\Request $request, Project $project)
     {
         $this->authorize('view', $project);
+
+        if ($request->expectsJson()) {
+            $project->load('evaluation', 'messages.user');
+
+            return response()->json([
+                'project' => [
+                    'id' => $project->id,
+                    'reference' => $project->reference,
+                    'title' => $project->title,
+                    'type' => $project->typeLabel(),
+                    'status' => $project->statusLabel(),
+                    'nda_status' => Project::NDA[$project->nda_status] ?? $project->nda_status,
+                    'problem' => $project->problem,
+                    'description' => $project->description,
+                    'messages' => $project->messages
+                        ->where('is_internal', false)
+                        ->map(fn ($message) => [
+                            'author' => $message->user?->name ?? 'Équipe EXPOSIS',
+                            'body' => $message->body,
+                            'created_at' => $message->created_at?->toIso8601String(),
+                        ])->values(),
+                    'evaluation' => $project->evaluation?->shared ? [
+                        'score' => $project->evaluation->score(),
+                        'recommendation' => \App\Models\Evaluation::RECOMMENDATIONS[$project->evaluation->recommendation] ?? $project->evaluation->recommendation,
+                        'summary' => $project->evaluation->summary,
+                    ] : null,
+                ],
+                'status_message' => session('status'),
+                'errors' => session('errors')?->getBag('default')->messages() ?? [],
+            ]);
+        }
+
         return view('projects.show', ['project' => $project->load('evaluation', 'messages.user')]);
     }
 }
