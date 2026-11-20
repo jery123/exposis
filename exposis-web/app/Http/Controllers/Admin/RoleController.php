@@ -6,8 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\Permission;
 use App\Models\Role;
 use App\Models\User;
-use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
@@ -34,6 +34,9 @@ class RoleController extends Controller
                         'name' => $permission->name,
                         'slug' => $permission->slug,
                     ])->values(),
+                    'status_message' => session('status'),
+                    'errors' => session('errors')?->getBag('default')->messages() ?? [],
+                    'old' => $this->oldInput(),
                 ])->values(),
             ]);
         }
@@ -51,6 +54,8 @@ class RoleController extends Controller
             return response()->json([
                 'role' => ['name' => '', 'description' => '', 'permission_ids' => []],
                 'permissions' => $this->permissionsData($permissions),
+                'errors' => session('errors')?->getBag('default')->messages() ?? [],
+                'old' => $this->oldInput(),
             ]);
         }
 
@@ -95,6 +100,8 @@ class RoleController extends Controller
                     'permission_ids' => $role->permissions->modelKeys(),
                 ],
                 'permissions' => $this->permissionsData($permissions),
+                'errors' => session('errors')?->getBag('default')->messages() ?? [],
+                'old' => $this->oldInput(),
             ]);
         }
 
@@ -168,5 +175,14 @@ class RoleController extends Controller
             'name' => $permission->name,
             'slug' => $permission->slug,
         ])->values())->all();
+    }
+
+    private function oldInput(): array
+    {
+        return [
+            'name' => old('name'),
+            'description' => old('description'),
+            'permission_ids' => old('permission_ids'),
+        ];
     }
 }

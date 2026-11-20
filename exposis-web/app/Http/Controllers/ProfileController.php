@@ -3,8 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\ProfileUpdateRequest;
-use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Redirect;
@@ -30,6 +30,12 @@ class ProfileController extends Controller
                 ],
                 'status_message' => session('status'),
                 'errors' => session('errors')?->getBag('default')->messages() ?? [],
+                'old' => [
+                    'name' => old('name'),
+                    'email' => old('email'),
+                    'organization_name' => old('organization_name'),
+                    'phone' => old('phone'),
+                ],
             ]);
         }
 

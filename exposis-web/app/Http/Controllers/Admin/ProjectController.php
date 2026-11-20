@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
@@ -37,6 +38,7 @@ class ProjectController extends Controller
                     'last_page' => $projects->lastPage(),
                     'total' => $projects->total(),
                 ],
+                'statuses' => Project::STATUSES,
             ]);
         }
 
@@ -80,7 +82,20 @@ class ProjectController extends Controller
                 ],
                 'statuses' => Project::STATUSES,
                 'nda_options' => Project::NDA,
-                'recommendations' => \App\Models\Evaluation::RECOMMENDATIONS,
+                'recommendations' => Evaluation::RECOMMENDATIONS,
+                'status_message' => session('status'),
+                'errors' => session('errors')?->getBag('default')->messages() ?? [],
+                'old' => [
+                    'status' => old('status'),
+                    'nda_status' => old('nda_status'),
+                    'technical' => old('technical'),
+                    'resources' => old('resources'),
+                    'impact' => old('impact'),
+                    'risk' => old('risk'),
+                    'recommendation' => old('recommendation'),
+                    'summary' => old('summary'),
+                    'shared' => old('shared'),
+                ],
             ]);
         }
 
@@ -103,6 +118,7 @@ class ProjectController extends Controller
                 report($e);
             }
         }
+
         return back()->with('status', 'Projet mis à jour.');
     }
 
@@ -116,7 +132,10 @@ class ProjectController extends Controller
         ]);
         $data['shared'] = $r->boolean('shared');
         $project->evaluation()->updateOrCreate(['project_id' => $project->id], $data + ['evaluator_id' => $r->user()->id]);
-        if ($project->status !== 'accepted' && $project->status !== 'declined') $project->update(['status' => 'evaluated']);
+        if ($project->status !== 'accepted' && $project->status !== 'declined') {
+            $project->update(['status' => 'evaluated']);
+        }
+
         return back()->with('status', 'Évaluation enregistrée.');
     }
 }

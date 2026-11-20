@@ -10,6 +10,18 @@ Before building from a fresh clone, ensure the Next.js source is present in
 `exposis-next`. The parent Git repository records that directory as a submodule
 but currently has no `.gitmodules` mapping, so a fresh clone may leave it empty.
 
+## UI and backend
+
+Caddy sends site traffic to Next.js. The public, authentication, member, and
+administration screens are rendered by Next.js; Laravel remains responsible
+for authentication, authorization, validation, persistence, uploads, and email.
+Next.js reads page data from the corresponding Laravel routes as JSON and
+forwards write requests through its session- and CSRF-aware Laravel bridge.
+
+The original 55 Laravel Blade templates are preserved in
+`exposis-web/resources/views-backup/`. Keep this backup until the Next.js screens
+have been verified in the target environment.
+
 ## Requirements
 
 - A Linux VPS with Docker Engine and the Docker Compose plugin.

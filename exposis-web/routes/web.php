@@ -7,10 +7,10 @@ use App\Http\Controllers\Admin\PublicProjectController as AdminPublicProjectCont
 use App\Http\Controllers\Admin\RoleController as AdminRoleController;
 use App\Http\Controllers\Admin\UserRoleController as AdminUserRoleController;
 use App\Http\Controllers\CommunityProjectController;
+use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\ProjectFileController;
 use App\Http\Controllers\ProjectMessageController;
-use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PublicController;
 use App\Http\Controllers\SitemapController;
 use Illuminate\Http\Request;
@@ -53,7 +53,7 @@ Route::get('/dashboard', function (Request $request) {
 })->middleware('auth')->name('dashboard');
 
 Route::middleware('auth')->group(function () {
-    Route::get('/api/community/session', fn (\Illuminate\Http\Request $request) => response()->json([
+    Route::get('/api/community/session', fn (Request $request) => response()->json([
         'user' => ['name' => $request->user()->name],
     ]))->name('community.session');
     Route::get('/communaute/projets', [CommunityProjectController::class, 'index'])->name('community.projects.index');

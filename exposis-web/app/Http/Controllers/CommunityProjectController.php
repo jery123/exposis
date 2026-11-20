@@ -34,6 +34,7 @@ class CommunityProjectController extends Controller
                     'report' => $project->report ? [
                         'name' => $project->report->original_name,
                         'approved' => (bool) $project->report->approved_at,
+                        'url' => route('community.projects.report.download', $project, false),
                     ] : null,
                 ])->values(),
                 'pagination' => [
@@ -79,6 +80,7 @@ class CommunityProjectController extends Controller
                     'status' => $project->status,
                     'summary' => $project->summary,
                     'body' => $project->body,
+                    'body_html' => ProjectBody::render($project->body),
                     'team_members' => $project->team_members ?? [],
                     'repo_url' => $project->repo_url,
                     'published_at' => $project->published_at?->toIso8601String(),

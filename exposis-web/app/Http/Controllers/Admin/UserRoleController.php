@@ -50,6 +50,7 @@ class UserRoleController extends Controller
                 ],
                 'status_message' => session('status'),
                 'errors' => session('errors')?->getBag('default')->messages() ?? [],
+                'old' => ['role_id' => old('role_id')],
             ]);
         }
 

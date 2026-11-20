@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
@@ -41,6 +42,9 @@ class PublicProjectController extends Controller
                 ],
                 'poles' => PublicProject::POLES,
                 'statuses' => PublicProject::STATUSES,
+                'status_message' => session('status'),
+                'errors' => session('errors')?->getBag('default')->messages() ?? [],
+                'old' => $this->oldInput(),
             ]);
         }
 
@@ -56,6 +60,8 @@ class PublicProjectController extends Controller
                 'item' => $this->itemData($item),
                 'poles' => PublicProject::POLES,
                 'statuses' => PublicProject::STATUSES,
+                'errors' => session('errors')?->getBag('default')->messages() ?? [],
+                'old' => $this->oldInput(),
             ]);
         }
 
@@ -71,13 +77,21 @@ class PublicProjectController extends Controller
                 'item' => $this->itemData($item),
                 'poles' => PublicProject::POLES,
                 'statuses' => PublicProject::STATUSES,
+                'errors' => session('errors')?->getBag('default')->messages() ?? [],
+                'old' => $this->oldInput(),
             ]);
         }
 
         return view('admin.public-projects.form', compact('item'));
     }
 
-    public function store(Request $r) { PublicProject::create($this->data($r)); return redirect()->route('admin.public-projects.index')->with('status', 'Projet créé.'); }
+    public function store(Request $r)
+    {
+        PublicProject::create($this->data($r));
+
+        return redirect()->route('admin.public-projects.index')->with('status', 'Projet créé.');
+    }
+
     public function update(Request $r, PublicProject $public_project)
     {
         $public_project->update($this->data($r, $public_project));
@@ -93,6 +107,7 @@ class PublicProjectController extends Controller
 
         return redirect()->route('admin.public-projects.index')->with('status', 'Projet mis à jour.');
     }
+
     public function destroy(PublicProject $public_project)
     {
         Storage::disk('local')->delete($public_project->images()->pluck('path')->all());
@@ -148,6 +163,7 @@ class PublicProjectController extends Controller
             ->all();
         $d['is_sample'] = $r->boolean('is_sample');
         $d['published_at'] = $r->boolean('publish') ? ($current?->published_at ?? now()) : null;
+
         return $d;
     }
 
@@ -176,6 +192,23 @@ class PublicProjectController extends Controller
                 'approved' => (bool) $item->report->approved_at,
                 'url' => route('admin.public-projects.reports.show', [$item, $item->report], false),
             ] : null,
+        ];
+    }
+
+    private function oldInput(): array
+    {
+        return [
+            'title' => old('title'),
+            'slug' => old('slug'),
+            'pole' => old('pole'),
+            'status' => old('status'),
+            'summary' => old('summary'),
+            'team_members' => old('team_members'),
+            'body' => old('body'),
+            'repo_url' => old('repo_url'),
+            'approve_report' => old('approve_report'),
+            'is_sample' => old('is_sample'),
+            'publish' => old('publish'),
         ];
     }
 }

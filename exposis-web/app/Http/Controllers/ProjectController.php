@@ -1,15 +1,18 @@
 <?php
+
 namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreProjectRequest;
+use App\Models\Evaluation;
 use App\Models\Project;
 use App\Notifications\ProjectSubmitted;
-use Illuminate\Support\Facades\Notification;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Notification;
 
 class ProjectController extends Controller
 {
-    public function index(\Illuminate\Http\Request $request)
+    public function index(Request $request)
     {
         $user = auth()->user();
         $activeStatuses = ['submitted', 'in_review', 'needs_info'];
@@ -46,16 +49,32 @@ class ProjectController extends Controller
         return view('projects.index', compact('projects', 'stats'));
     }
 
-    public function create(\Illuminate\Http\Request $request)
+    public function create(Request $request)
     {
         if ($request->expectsJson()) {
-            return response()->json(['types' => Project::TYPES]);
+            return response()->json([
+                'types' => Project::TYPES,
+                'errors' => session('errors')?->getBag('default')->messages() ?? [],
+                'old' => [
+                    'title' => old('title'),
+                    'request_type' => old('request_type'),
+                    'problem' => old('problem'),
+                    'description' => old('description'),
+                    'timeline' => old('timeline'),
+                    'budget' => old('budget'),
+                    'confidential' => old('confidential'),
+                    'consent' => old('consent'),
+                ],
+            ]);
         }
 
         return view('projects.create');
     }
 
-    public function publicCreate() { return view('public.submit-project'); }
+    public function publicCreate()
+    {
+        return view('public.submit-project');
+    }
 
     public function store(StoreProjectRequest $request)
     {
@@ -74,7 +93,9 @@ class ProjectController extends Controller
         }
         try { // a failed email must not fail the submission
             Notification::route('mail', config('services.exposis.inbox'))->notify(new ProjectSubmitted($project));
-        } catch (\Throwable $e) { Log::warning('Project mail failed: ' . $e->getMessage()); }
+        } catch (\Throwable $e) {
+            Log::warning('Project mail failed: '.$e->getMessage());
+        }
         if ($request->expectsJson()) {
             return response()->json(['reference' => $project->reference], 201);
         }
@@ -82,10 +103,11 @@ class ProjectController extends Controller
             return redirect()->route('public.submissions.received')
                 ->with('submission_reference', $project->reference);
         }
+
         return redirect()->route('projects.show', $project)->with('status', 'Merci ! Votre projet a bien été reçu. Aucun droit n’est transféré ; un NDA précède tout travail approfondi.');
     }
 
-    public function show(\Illuminate\Http\Request $request, Project $project)
+    public function show(Request $request, Project $project)
     {
         $this->authorize('view', $project);
 
@@ -111,7 +133,7 @@ class ProjectController extends Controller
                         ])->values(),
                     'evaluation' => $project->evaluation?->shared ? [
                         'score' => $project->evaluation->score(),
-                        'recommendation' => \App\Models\Evaluation::RECOMMENDATIONS[$project->evaluation->recommendation] ?? $project->evaluation->recommendation,
+                        'recommendation' => Evaluation::RECOMMENDATIONS[$project->evaluation->recommendation] ?? $project->evaluation->recommendation,
                         'summary' => $project->evaluation->summary,
                     ] : null,
                 ],
