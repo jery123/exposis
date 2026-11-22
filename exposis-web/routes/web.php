@@ -26,6 +26,15 @@ Route::get('/projets/{project:slug}', [PublicController::class, 'project'])->nam
 Route::get('/projets/{project:slug}/rapport', [PublicController::class, 'projectReport'])
     ->middleware('auth')
     ->name('public.projects.report.download');
+Route::get('/projets/{project:slug}/rapport/apercu', [PublicController::class, 'reportPreview'])
+    ->middleware('throttle:20,1')
+    ->name('public.projects.report.preview');
+Route::get('/projets/{project:slug}/rapport/apercu/page', [PublicController::class, 'reportPreviewPage'])
+    ->middleware('throttle:30,1')
+    ->name('public.projects.report.preview.page');
+Route::get('/projets/{project:slug}/rapport/visualiser', [PublicController::class, 'reportViewer'])
+    ->middleware(['auth', 'throttle:20,1'])
+    ->name('public.projects.report.viewer');
 Route::get('/api/public/projects/{project:slug}/report', [PublicController::class, 'projectReport'])
     ->middleware('auth')
     ->name('api.public.projects.report.download');
@@ -92,6 +101,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
         Route::get('/public-projects/{public_project}/reports/{report}', [AdminPublicProjectController::class, 'report'])->name('public-projects.reports.show');
         Route::resource('public-projects', AdminPublicProjectController::class)->except('show');
     });
+    Route::get('/users/export', [AdminUserRoleController::class, 'export'])->middleware('permission:users.manage')->name('users.export');
     Route::get('/users', [AdminUserRoleController::class, 'index'])->middleware('permission:users.manage')->name('users.index');
     Route::patch('/users/{user}/role', [AdminUserRoleController::class, 'update'])->middleware('permission:users.manage')->name('users.role.update');
     Route::resource('roles', AdminRoleController::class)->except('show')->middleware('permission:roles.manage');

@@ -64,6 +64,37 @@ class ProjectAccessTest extends TestCase
             ->assertSee('Accepté');
     }
 
+    public function test_member_dashboard_lists_only_their_community_projects(): void
+    {
+        Storage::fake('local');
+        $member = User::factory()->create();
+        $project = $member->publicProjects()->create([
+            'slug' => 'mon-projet-termine',
+            'title' => 'Mon projet terminé',
+            'pole' => 'Formation',
+            'status' => 'Terminé',
+            'summary' => 'Une formation achevée.',
+            'body' => 'Description du projet.',
+        ]);
+        User::factory()->create()->publicProjects()->create([
+            'slug' => 'projet-prive-autre-membre',
+            'title' => 'Projet privé autre membre',
+            'pole' => 'Formation',
+            'status' => 'Terminé',
+            'summary' => 'Un projet qui appartient à quelqu’un d’autre.',
+            'body' => 'Description du projet.',
+        ]);
+
+        $this->actingAs($member)
+            ->get(route('projects.index'))
+            ->assertOk()
+            ->assertSee('Mes projets communautaires')
+            ->assertSee('Mon projet terminé')
+            ->assertSee('Terminé')
+            ->assertSee(route('community.projects.show', $project))
+            ->assertDontSee('Projet privé autre membre');
+    }
+
     public function test_member_project_request_form_uses_the_submission_layout(): void
     {
         $this->actingAs(User::factory()->create())
@@ -85,6 +116,35 @@ class ProjectAccessTest extends TestCase
         $adminRole = Role::where('slug', 'admin')->firstOrFail();
         $admin = User::factory()->create(['role' => 'admin', 'role_id' => $adminRole->id]);
         $this->actingAs($admin)->get(route('projects.show', $p))->assertForbidden();
+    }
+
+    public function test_member_project_detail_shows_their_project_and_only_visible_messages(): void
+    {
+        $member = User::factory()->create();
+        $project = $member->projects()->create($this->payload([
+            'title' => 'Projet de suivi',
+            'consent' => null,
+        ]));
+        $project->messages()->create([
+            'user_id' => $member->id,
+            'body' => 'Message visible au membre',
+            'is_internal' => false,
+        ]);
+        $project->messages()->create([
+            'user_id' => $member->id,
+            'body' => 'Note réservée à l’équipe',
+            'is_internal' => true,
+        ]);
+
+        $this->actingAs($member)
+            ->get(route('projects.show', $project))
+            ->assertOk()
+            ->assertSee('Projet de suivi')
+            ->assertSee('Votre projet, en bref')
+            ->assertSee('Demande reçue')
+            ->assertSee('Message visible au membre')
+            ->assertSee('Envoyer le message')
+            ->assertDontSee('Note réservée à l’équipe');
     }
 
     public function test_org_cannot_reach_admin(): void
@@ -113,7 +173,8 @@ class ProjectAccessTest extends TestCase
     {
         $this->get(route('public.submissions.create'))
             ->assertOk()
-            ->assertSee('Aucun compte n’est nécessaire.');
+            ->assertSee('Tout commence par')
+            ->assertSee('Envoyer la demande');
 
         $this->post(route('public.submissions.store'), $this->payload([
             'title' => 'Projet test',
@@ -241,6 +302,45 @@ class ProjectAccessTest extends TestCase
         $this->actingAs(User::factory()->create())
             ->get($downloadUrl)
             ->assertForbidden();
+    }
+
+    public function test_authenticated_members_can_read_the_full_approved_report_inline(): void
+    {
+        Storage::fake('local');
+        $project = PublicProject::create([
+            'slug' => 'rapport-complet',
+            'title' => 'Projet avec rapport complet',
+            'pole' => 'Formation',
+            'status' => 'Terminé',
+            'summary' => 'Une formation documentée.',
+            'body' => 'Description du projet.',
+            'published_at' => now()->subMinute(),
+        ]);
+        $report = $project->report()->create([
+            'path' => 'community-projects/'.$project->id.'/reports/rapport.pdf',
+            'original_name' => 'rapport.pdf',
+            'approved_at' => now()->subMinute(),
+        ]);
+        Storage::disk('local')->put($report->path, 'private full report bytes');
+        $visitorRole = Role::where('slug', 'visitor')->firstOrFail();
+        $visitor = User::factory()->create(['role' => 'visitor', 'role_id' => $visitorRole->id]);
+
+        $response = $this->actingAs($visitor)
+            ->get(route('public.projects.report.viewer', $project))
+            ->assertOk()
+            ->assertHeader('Content-Type', 'application/pdf')
+            ->assertHeader('Cache-Control', 'no-store, private');
+        $this->assertSame('private full report bytes', $response->streamedContent());
+
+        $member = User::factory()->create();
+        $this->actingAs($member)
+            ->get(route('public.projects.report.viewer', $project))
+            ->assertOk()
+            ->assertHeader('Content-Type', 'application/pdf');
+        $this->actingAs($member)
+            ->get(route('public.projects.report.download', $project))
+            ->assertOk()
+            ->assertDownload('rapport.pdf');
     }
 
     public function test_guest_cannot_access_the_member_session_endpoint(): void
@@ -450,6 +550,10 @@ class ProjectAccessTest extends TestCase
             ->assertHeader('Cache-Control', 'no-store, private');
         $this->actingAs($visitor)
             ->get(route('api.public.projects.report.download', $project))
+            ->assertOk()
+            ->assertDownload('rapport.pdf');
+        $this->actingAs($member)
+            ->get(route('public.projects.report.download', $project))
             ->assertOk()
             ->assertDownload('rapport.pdf');
         $this->getJson("/api/public/projects/{$project->slug}")

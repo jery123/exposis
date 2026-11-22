@@ -5,24 +5,23 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Role;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class UserRoleController extends Controller
 {
     public function index(Request $request): View|JsonResponse
     {
-        $users = User::with('accessRole')
-            ->when($request->filled('q'), function ($query) use ($request) {
-                $term = '%'.str_replace(['%', '_'], ['\\%', '\\_'], $request->string('q')->toString()).'%';
-                $query->where(fn ($users) => $users
-                    ->where('name', 'like', $term)
-                    ->orWhere('email', 'like', $term));
-            })
-            ->latest()
+        $filters = $request->validate([
+            'q' => ['nullable', 'string', 'max:100'],
+            'role_id' => ['nullable', 'integer', 'exists:roles,id'],
+        ]);
+        $users = $this->filteredUsers($filters)
             ->paginate(20)
             ->withQueryString();
 
@@ -58,6 +57,65 @@ class UserRoleController extends Controller
             'users' => $users,
             'roles' => $roles,
         ]);
+    }
+
+    public function export(Request $request): StreamedResponse
+    {
+        $filters = $request->validate([
+            'q' => ['nullable', 'string', 'max:100'],
+            'role_id' => ['nullable', 'integer', 'exists:roles,id'],
+        ]);
+        $users = $this->filteredUsers($filters);
+
+        return response()->streamDownload(function () use ($users): void {
+            $output = fopen('php://output', 'w');
+            fwrite($output, "\xEF\xBB\xBF");
+            fputcsv($output, ['Nom', 'Adresse e-mail', 'Organisation', 'Téléphone', 'Rôle', 'E-mail vérifié', 'Date de création']);
+
+            $users->chunkById(200, function ($batch) use ($output): void {
+                foreach ($batch as $user) {
+                    fputcsv($output, array_map($this->spreadsheetSafe(...), [
+                        $user->name,
+                        $user->email,
+                        $user->organization_name,
+                        $user->phone,
+                        $user->roleLabel(),
+                        $user->email_verified_at ? 'Oui' : 'Non',
+                        $user->created_at?->toDateString(),
+                    ]));
+                }
+            });
+
+            fclose($output);
+        }, 'exposis-comptes-'.now()->format('Ymd').'.csv', [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+        ]);
+    }
+
+    /**
+     * @param  array{q?: string|null, role_id?: int|string|null}  $filters
+     * @return Builder<User>
+     */
+    private function filteredUsers(array $filters): Builder
+    {
+        return User::with('accessRole')
+            ->when($filters['role_id'] ?? null, fn (Builder $query, $roleId) => $query->where('role_id', $roleId))
+            ->when($filters['q'] ?? null, function (Builder $query, string $search): void {
+                $term = '%'.str_replace(['%', '_'], ['\\%', '\\_'], $search).'%';
+                $query->where(fn (Builder $users) => $users
+                    ->where('name', 'like', $term)
+                    ->orWhere('email', 'like', $term)
+                    ->orWhere('organization_name', 'like', $term)
+                    ->orWhere('phone', 'like', $term));
+            })
+            ->latest();
+    }
+
+    private function spreadsheetSafe(mixed $value): mixed
+    {
+        return is_string($value) && preg_match('/^[=+\-@\t\r]/', $value)
+            ? "'".$value
+            : $value;
     }
 
     public function update(Request $request, User $user): RedirectResponse

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreProjectRequest;
 use App\Models\Evaluation;
 use App\Models\Project;
+use App\Models\PublicProject;
 use App\Notifications\ProjectSubmitted;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -19,6 +20,12 @@ class ProjectController extends Controller
         $resolvedStatuses = ['evaluated', 'accepted', 'declined'];
 
         $projects = $user->projects()->latest()->paginate(12);
+        $communityProjects = $user->publicProjects()
+            ->withCount('images')
+            ->latest()
+            ->limit(6)
+            ->get();
+        $communityProjectCount = $user->publicProjects()->count();
         $stats = [
             'total' => $user->projects()->count(),
             'active' => $user->projects()->whereIn('status', $activeStatuses)->count(),
@@ -42,11 +49,20 @@ class ProjectController extends Controller
                     'total' => $projects->total(),
                 ],
                 'stats' => $stats,
+                'community_projects' => $communityProjects->map(fn (PublicProject $project) => [
+                    'slug' => $project->slug,
+                    'title' => $project->title,
+                    'pole' => $project->pole,
+                    'status' => $project->status,
+                    'images_count' => $project->images_count,
+                    'published_at' => $project->published_at?->toIso8601String(),
+                ])->values(),
+                'community_projects_count' => $communityProjectCount,
                 'status_message' => session('status'),
             ]);
         }
 
-        return view('projects.index', compact('projects', 'stats'));
+        return view('projects.index', compact('projects', 'stats', 'communityProjects', 'communityProjectCount'));
     }
 
     public function create(Request $request)

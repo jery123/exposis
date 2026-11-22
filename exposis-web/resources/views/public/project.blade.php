@@ -2,40 +2,48 @@
 @section('title', $project->title . ' | EXPOSIS')
 @section('description', \Illuminate\Support\Str::limit($project->summary, 155))
 @section('content')
-<section><div class="w" style="max-width:760px">
-  <a href="{{ route('public.projects.index') }}" style="font-weight:700">← Retour aux projets</a>
-  <p class="tags" style="margin-top:28px"><b>{{ $project->pole }}</b> · {{ $project->status }} · <time datetime="{{ $project->published_at->toDateString() }}">{{ $project->published_at->translatedFormat('j F Y') }}</time>@if($project->is_sample) · Exemple @endif</p>
-  <h1 style="font-size:clamp(2.2rem,6vw,4rem);margin:12px 0 28px">{{ $project->title }}</h1>
-  @if ($project->team_members)
-    <section class="team" aria-labelledby="team-heading">
-      <h2 id="team-heading">L’équipe du projet</h2>
-      <ul>@foreach ($project->team_members as $member)<li>{{ $member }}</li>@endforeach</ul>
-    </section>
-  @endif
-  <div class="prose">{!! \App\Support\ProjectBody::render($project->body) !!}</div>
-  @if ($project->images->isNotEmpty())
-    <section class="project-gallery" aria-label="Images du projet">
-      @foreach ($project->images as $index => $image)
-        <a href="{{ url("/api/public/projects/{$project->slug}/images/{$image->id}") }}" target="_blank" rel="noopener noreferrer">
-          <img src="{{ url("/api/public/projects/{$project->slug}/images/{$image->id}") }}" alt="Image {{ $index + 1 }} du projet {{ $project->title }}">
-        </a>
-      @endforeach
-    </section>
-  @endif
-  @if ($project->report?->approved_at && $project->report->approved_at->isPast())
-    <section class="project-report" aria-labelledby="project-report-heading">
-      <h2 id="project-report-heading">Rapport du projet</h2>
-      <p>Consultez la documentation partagée par l’équipe du projet.</p>
-      <a class="btn g" href="{{ route('public.projects.report.download', $project) }}">
-        @auth
-          Télécharger le rapport ({{ strtoupper(pathinfo($project->report->original_name, PATHINFO_EXTENSION)) }})
-        @else
-          Se connecter pour télécharger le rapport ({{ strtoupper(pathinfo($project->report->original_name, PATHINFO_EXTENSION)) }})
-        @endauth
-      </a>
-    </section>
-  @endif
-  @if ($project->repo_url)<p style="margin-top:32px"><a class="btn g" href="{{ $project->repo_url }}" rel="noopener noreferrer" target="_blank">Voir le projet</a></p>@endif
-</div></section>
-<style>.prose h2{font-size:1.8rem;margin:28px 0 10px}.prose p{color:var(--mute);margin:0 0 16px}.prose a{color:#B84A00}.team{margin:0 0 28px;padding:20px;border:2px solid var(--ink);border-radius:16px;background:var(--mist)}.team h2{font-size:1.3rem}.team ul{display:flex;flex-wrap:wrap;gap:8px;list-style:none;padding:0;margin:14px 0 0}.team li{padding:5px 12px;border:1px solid var(--line);border-radius:99px;background:#fff;font-weight:700}.project-gallery{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:14px;margin-top:30px}.project-gallery img{display:block;width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:12px}.project-report{margin-top:36px;padding:24px;border:1px solid var(--line);border-radius:12px;background:var(--mist)}.project-report h2{margin:0;font-size:1.35rem}.project-report p{color:var(--mute)}</style>
+    <article class="project-detail section-wrap">
+        <a class="back-link" href="{{ route('public.projects.index') }}"><span aria-hidden="true">←</span> Retour au catalogue</a>
+        <header class="project-detail-header">
+            <div class="project-detail-tags"><span class="catalog-pole">{{ $project->pole }}</span><span class="catalog-status"><i aria-hidden="true"></i>{{ $project->status }}</span></div>
+            <h1>{{ $project->title }}</h1>
+            <p class="project-lead">{{ $project->summary }}</p>
+            @if ($project->team_members)<span class="project-detail-team-count">{{ count($project->team_members) }} membre{{ count($project->team_members) > 1 ? 's' : '' }} dans l’équipe</span>@endif
+        </header>
+        <div class="project-detail-grid">
+            <div class="project-detail-main">
+                @if ($project->images->isNotEmpty())
+                    <section class="project-gallery" aria-label="Images du projet {{ $project->title }}">
+                        @foreach ($project->images as $index => $image)
+                            <a class="project-gallery-image" href="{{ url("/api/public/projects/{$project->slug}/images/{$image->id}") }}" target="_blank" rel="noreferrer" aria-label="Ouvrir l’image {{ $index + 1 }} du projet {{ $project->title }}">
+                                <img src="{{ url("/api/public/projects/{$project->slug}/images/{$image->id}") }}" alt="{{ $project->title }} — image {{ $index + 1 }}" loading="lazy">
+                            </a>
+                        @endforeach
+                    </section>
+                @endif
+                @if ($project->body)
+                    <section class="project-body-section"><span class="section-kicker"><span>01</span> À propos</span><h2>Une idée, une démarche, un impact.</h2><div class="project-body">{!! \App\Support\ProjectBody::render($project->body) !!}</div></section>
+                @endif
+                @if ($project->team_members)
+                    <section class="team-section"><span class="section-kicker"><span>02</span> La communauté</span><h2>Celles et ceux qui le font avancer</h2><ul>@foreach ($project->team_members as $member)<li>{{ $member }}</li>@endforeach</ul></section>
+                @endif
+            </div>
+            <aside class="project-detail-aside" aria-label="Informations sur le projet">
+                <span class="project-aside-kicker">Fiche projet</span>
+                <div class="project-aside-row"><span>Domaine</span><strong>{{ $project->pole }}</strong></div>
+                <div class="project-aside-row"><span>État</span><strong class="project-aside-status"><i aria-hidden="true"></i>{{ $project->status }}</strong></div>
+                <div class="project-aside-row"><span>Équipe</span><strong>{{ count($project->team_members ?? []) ? count($project->team_members).' membre(s)' : 'Communauté EXPOSIS' }}</strong></div>
+                @if ($project->report?->approved_at && $project->report->approved_at->isPast())
+                    <a class="button button-orange project-external-link" href="{{ route('public.projects.report.preview', $project) }}">@auth Consulter le rapport complet @else Lire l’aperçu du rapport @endauth <span aria-hidden="true">↗</span></a>
+                @endif
+                @if ($project->repo_url)
+                    <a class="button {{ $project->report?->approved_at ? 'button-outline' : 'button-orange' }} project-external-link" href="{{ $project->repo_url }}" target="_blank" rel="noreferrer">Découvrir le projet <span aria-hidden="true">↗</span></a>
+                @else
+                    @if(!       Auth::user())
+                        <a class="button {{ $project->report?->approved_at ? 'button-outline' : 'button-dark' }} project-external-link" href="{{ route('register') }}">Rejoindre la communauté<span aria-hidden="true">↗</span></a>
+                    @endif
+                @endif
+            </aside>
+        </div>
+    </article>
 @endsection

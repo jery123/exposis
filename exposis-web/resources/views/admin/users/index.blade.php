@@ -4,10 +4,21 @@
     <div><span class="admin-eyebrow">Accès et équipe</span><h2>Comptes membres</h2><p>Attribuez un rôle à chaque compte. Les permissions du rôle déterminent ensuite les accès disponibles.</p></div>
     <span class="admin-count">{{ $users->total() }} compte(s)</span>
   </section>
-  <form class="admin-search-form" method="GET">
+  <form class="admin-search-form admin-user-filters" method="GET" action="{{ route('admin.users.index') }}">
     <label class="sr-only" for="user-search">Rechercher un membre</label>
-    <input id="user-search" name="q" value="{{ request('q') }}" placeholder="Rechercher par nom ou adresse e-mail">
-    <button class="admin-button admin-button--dark" type="submit">Rechercher <span aria-hidden="true">⌕</span></button>
+    <input id="user-search" name="q" value="{{ request('q') }}" placeholder="Nom, e-mail, organisation ou téléphone">
+    <label class="sr-only" for="user-role">Filtrer par rôle</label>
+    <select id="user-role" name="role_id">
+      <option value="">Tous les rôles</option>
+      @foreach ($roles as $role)
+        <option value="{{ $role->id }}" @selected((string) request('role_id') === (string) $role->id)>{{ $role->name }}</option>
+      @endforeach
+    </select>
+    <button class="admin-button admin-button--dark" type="submit">Filtrer les comptes <span aria-hidden="true">⌕</span></button>
+    @if (request()->filled('q') || request()->filled('role_id'))
+      <a class="admin-button admin-button--secondary" href="{{ route('admin.users.index') }}">Effacer les filtres</a>
+    @endif
+    <a class="admin-button admin-button--primary" href="{{ route('admin.users.export', request()->query()) }}">Exporter les résultats <span aria-hidden="true">↓</span></a>
   </form>
   <div class="admin-table-wrap">
     <table class="admin-table">

@@ -111,6 +111,59 @@
         @endif
       </section>
 
+      <section class="member-projects__list-section member-projects__community-list" aria-labelledby="community-projects-heading">
+        <div class="member-projects__list-heading">
+          <div>
+            <span class="member-projects__eyebrow">Vos réalisations</span>
+            <h2 id="community-projects-heading">Mes projets communautaires</h2>
+          </div>
+          @if ($communityProjectCount > 0)
+            <span class="member-projects__count">{{ $communityProjectCount }} projet{{ $communityProjectCount > 1 ? 's' : '' }}</span>
+          @endif
+        </div>
+
+        @if ($communityProjects->isEmpty())
+          <div class="member-projects__community-empty">
+            <p>Les projets terminés que vous enregistrez sur la plateforme apparaîtront ici, qu’ils soient en cours de validation ou déjà publiés.</p>
+            <a class="member-projects__button member-projects__button--secondary" href="{{ route('community.projects.create') }}">
+              Présenter un projet terminé
+              <svg aria-hidden="true" viewBox="0 0 20 20" fill="none"><path d="M4 10h12m-5-5 5 5-5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </a>
+          </div>
+        @else
+          <ul class="member-projects__grid">
+            @foreach ($communityProjects as $communityProject)
+              @php
+                $isPublished = $communityProject->published_at && $communityProject->published_at->isPast();
+                $communityStatus = $isPublished ? 'Publié' : 'En validation';
+                $communityStatusClass = $isPublished ? 'complete' : 'review';
+              @endphp
+              <li>
+                <a class="member-projects__card member-projects__card--community" href="{{ route('community.projects.show', $communityProject) }}">
+                  <span class="member-projects__card-top">
+                    <span class="member-projects__reference">{{ $communityProject->pole }}</span>
+                    <span class="member-projects__status member-projects__status--{{ $communityStatusClass }}">
+                      <span aria-hidden="true"></span>{{ $communityStatus }}
+                    </span>
+                  </span>
+                  <span class="member-projects__card-title">{{ $communityProject->title }}</span>
+                  <span class="member-projects__type">Avancement : {{ $communityProject->status }}</span>
+                  <span class="member-projects__card-bottom">
+                    <span>{{ $communityProject->images_count }} image{{ $communityProject->images_count > 1 ? 's' : '' }}</span>
+                    <span class="member-projects__view">Voir mon projet <span aria-hidden="true">↗</span></span>
+                  </span>
+                </a>
+              </li>
+            @endforeach
+          </ul>
+          @if ($communityProjectCount > $communityProjects->count())
+            <a class="member-projects__community-more" href="{{ route('community.projects.index') }}">
+              Voir tous mes projets communautaires <span aria-hidden="true">↗</span>
+            </a>
+          @endif
+        @endif
+      </section>
+
       <aside class="member-projects__community">
         <span class="member-projects__community-mark" aria-hidden="true">∞</span>
         <div>

@@ -22,7 +22,12 @@ class FeaturesTest extends TestCase
         $org = User::factory()->create(); $admin = User::factory()->create(['role' => 'admin']); $p = $this->project($org);
         $this->actingAs($admin)->post(route('projects.messages.store', $p), ['body' => 'note secrète', 'is_internal' => '1'])->assertRedirect();
         $this->actingAs($org)->post(route('projects.messages.store', $p), ['body' => 'bonjour équipe', 'is_internal' => '1'])->assertRedirect();
-        $this->actingAs($org)->get(route('projects.show', $p))->assertSee('bonjour équipe')->assertDontSee('note secrète');
+        $this->actingAs($org)->get(route('projects.show', $p))
+            ->assertOk()
+            ->assertSee('Votre projet, en bref')
+            ->assertSee('Échanges avec EXPOSIS')
+            ->assertSee('bonjour équipe')
+            ->assertDontSee('note secrète');
         $this->assertDatabaseHas('project_messages', ['body' => 'bonjour équipe', 'is_internal' => false]); // org cannot forge internal notes
     }
 
