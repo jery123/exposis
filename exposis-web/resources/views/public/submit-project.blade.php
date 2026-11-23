@@ -1,6 +1,7 @@
 @extends('layouts.public')
 @section('title', 'Soumettre un projet | EXPOSIS')
 @section('description', 'Proposez une idée à l’équipe EXPOSIS pour une première étude de faisabilité.')
+@section('robots', 'noindex, follow')
 @section('content')
     <section class="page-hero submit-hero">
         <div class="section-kicker"><span>Une idée à explorer ?</span> Première étape, sans engagement</div>

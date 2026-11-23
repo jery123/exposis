@@ -1,6 +1,11 @@
 @extends('layouts.public')
 @section('title', $project->title . ' | EXPOSIS')
 @section('description', \Illuminate\Support\Str::limit($project->summary, 155))
+@section('og_type', 'article')
+@if ($project->images->isNotEmpty())
+    @section('og_image', rtrim(config('seo.site_url'), '/').'/api/public/projects/'.rawurlencode($project->slug).'/images/'.$project->images->first()->id)
+    @section('og_image_alt', 'Illustration du projet '.$project->title)
+@endif
 @section('content')
     <article class="project-detail section-wrap">
         <a class="back-link" href="{{ route('public.projects.index') }}"><span aria-hidden="true">←</span> Retour au catalogue</a>

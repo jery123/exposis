@@ -17,6 +17,11 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/sitemap.xml', SitemapController::class)->name('sitemap');
+Route::get('/robots.txt', fn () => response(
+    "User-agent: *\nDisallow:\nSitemap: ".rtrim(config('seo.site_url'), '/')."/sitemap.xml\n",
+    200,
+    ['Content-Type' => 'text/plain; charset=UTF-8'],
+))->name('robots');
 
 Route::get('/', [PublicController::class, 'home'])->name('home');
 Route::get('/a-propos', [PublicController::class, 'about'])->name('about');

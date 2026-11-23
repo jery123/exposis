@@ -1,5 +1,6 @@
 @extends('layouts.public')
 @section('title', 'Choisir un nouveau mot de passe | EXPOSIS')
+@section('robots', 'noindex, nofollow')
 @section('content')
     <section class="portal"><div class="portal__inner">
         <header class="portal__heading"><span class="portal__eyebrow">Espace membre</span><h1>Choisir un nouveau mot de passe.</h1></header>

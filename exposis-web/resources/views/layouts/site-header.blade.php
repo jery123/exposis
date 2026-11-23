@@ -5,7 +5,6 @@
         </a>
         <nav aria-label="Navigation principale" class="main-nav">
             <a href="{{ route('about') }}">À propos</a>
-            {{-- <a href="{{ route('services') }}">Domaines et services</a> --}}
             <a href="{{ route('home') }}#approche">Notre approche</a>
             <a href="{{ route('public.projects.index') }}">Projets</a>
             <a href="{{ route('home') }}#communaute">La communauté</a>
@@ -17,7 +16,6 @@
             </button>
             <nav aria-label="Menu mobile" class="mobile-nav" id="mobile-menu" hidden>
                 <a href="{{ route('about') }}">À propos</a>
-                <a href="{{ route('services') }}">Domaines et services</a>
                 <a href="{{ route('home') }}#approche">Notre approche</a>
                 <a href="{{ route('public.projects.index') }}">Projets</a>
                 <a href="{{ route('home') }}#communaute">La communauté</a>

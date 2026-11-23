@@ -1,5 +1,6 @@
 @extends('layouts.public')
 @section('title', 'Demande reçue | EXPOSIS')
+@section('robots', 'noindex, nofollow')
 @section('content')
     <section class="receipt-page">
         <span class="receipt-mark" aria-hidden="true">✓</span>

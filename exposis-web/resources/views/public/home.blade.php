@@ -1,13 +1,13 @@
 @extends('layouts.public')
-@section('title', 'EXPOSIS — Les idées se construisent ensemble')
-@section('description', 'Communauté de recherche, d’expérimentation et d’innovation en informatique en Côte d’Ivoire.')
+@section('title', 'Laboratoire d’innovation numérique en Côte d’Ivoire | EXPOSIS')
+@section('description', 'EXPOSIS est un laboratoire indépendant de recherche appliquée et d’innovation numérique en Côte d’Ivoire. Nous expérimentons et partageons des solutions utiles.')
 @section('content')
     <section class="hero">
         <div class="hero-grid">
             <div class="hero-copy">
                 <p class="eyebrow"><span class="status-dot"></span> Laboratoire indépendant · Côte d’Ivoire</p>
                 <h1>Les idées ne changent rien. <em>Ce qu’on en fait, si.</em></h1>
-                <p class="hero-intro">EXPOSIS est une communauté de jeunes diplômés qui apprend, expérimente et construit des projets innovants pour répondre aux enjeux d’ici.</p>
+                <p class="hero-intro">EXPOSIS est un laboratoire indépendant de recherche appliquée, d’expérimentation et d’innovation numérique en Côte d’Ivoire. Nous réunissons des talents autour de projets utiles.</p>
                 <div class="hero-actions">
                     <a class="button button-orange" href="{{ route('public.submissions.create') }}">Soumettre un projet <span aria-hidden="true">↗</span></a>
                     <a class="button button-outline" href="{{ route('public.projects.index') }}">Découvrir les projets <span aria-hidden="true">↓</span></a>
@@ -55,6 +55,7 @@
             </div>
             <p>De la cybersécurité à la formation, nous expérimentons là où le numérique peut ouvrir de nouvelles possibilités.</p>
             <div class="focus-tags"><span>Cybersécurité</span><span>Intelligence artificielle</span><span>Logiciel libre</span><span>Réseaux &amp; cloud</span><span>Formation</span></div>
+            <a class="underlined-link" href="{{ route('services') }}">Découvrir nos domaines d’exploration <span aria-hidden="true">↗</span></a>
             <div class="focus-aside"><span>EX / 01</span><span>Explorer sans frontières.</span></div>
         </div>
     </section>

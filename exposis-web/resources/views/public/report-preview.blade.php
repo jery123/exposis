@@ -1,6 +1,7 @@
 @extends('layouts.public')
 @section('title', 'Rapport — ' . $project->title . ' | EXPOSIS')
 @section('description', 'Consultez le rapport du projet ' . $project->title . '.')
+@section('robots', 'noindex, nofollow')
 @section('content')
     <article class="report-reader section-wrap">
         <a class="back-link" href="{{ route('public.projects.show', $project) }}"><span aria-hidden="true">←</span> Retour au projet</a>

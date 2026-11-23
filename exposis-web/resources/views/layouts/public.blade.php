@@ -4,25 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>@yield('title', 'EXPOSIS — Les idées se construisent ensemble')</title>
-
-    <meta name="description" content="@yield('meta_description', 'Welcome to Exposis.')">
-
-    <meta name="robots" content="@yield('meta_robots', 'index, follow')">
-
-    <link rel="canonical" href="@yield('canonical', url()->current())">
-    <meta property="og:description" content="@yield('meta_description', 'Welcome to Exposis.')">
-    <meta property="og:site_name" content="Exposis">
-
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="@yield('title', 'Exposis')">
-    <meta name="twitter:description" content="@yield('meta_description', 'Welcome to Exposis.')">
-
-    <meta name="description" content="@yield('description', 'Communauté de recherche, d’expérimentation et d’innovation en informatique en Côte d’Ivoire.')">
-    <link rel="canonical" href="{{ url()->current() }}">
-    <meta property="og:title" content="@yield('title', 'EXPOSIS')">
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="{{ url()->current() }}">
+    @include('layouts.partials.seo')
     <link rel="icon" type="image/png" href="{{ asset('favicon.png') }}">
     <link rel="alternate icon" href="{{ asset('favicon.ico') }}">
     <link rel="preconnect" href="https://fonts.googleapis.com">

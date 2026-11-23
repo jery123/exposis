@@ -1,6 +1,7 @@
 @extends('layouts.public')
 @section('title', 'Créer un compte | EXPOSIS')
 @section('description', 'Rejoignez la communauté EXPOSIS en créant votre espace membre.')
+@section('robots', 'noindex, nofollow')
 @section('content')
     <section class="auth-page">
         <div class="auth-content">

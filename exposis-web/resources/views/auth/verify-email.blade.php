@@ -1,5 +1,6 @@
 @extends('layouts.public')
 @section('title', 'Vérifier votre adresse e-mail | EXPOSIS')
+@section('robots', 'noindex, nofollow')
 @section('content')
     <section class="portal"><div class="portal__inner">
         <header class="portal__heading"><span class="portal__eyebrow">Espace membre</span><h1>Vérifiez votre adresse e-mail.</h1><p>Confirmez votre adresse depuis le lien envoyé par e-mail pour accéder à toutes les fonctionnalités du compte.</p></header>

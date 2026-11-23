@@ -1,5 +1,6 @@
 @extends('layouts.public')
 @section('title', 'Confirmer votre identité | EXPOSIS')
+@section('robots', 'noindex, nofollow')
 @section('content')
     <section class="portal"><div class="portal__inner">
         <header class="portal__heading"><span class="portal__eyebrow">Espace membre</span><h1>Confirmer votre identité.</h1><p>Saisissez votre mot de passe pour continuer.</p></header>

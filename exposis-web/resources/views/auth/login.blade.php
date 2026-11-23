@@ -1,6 +1,7 @@
 @extends('layouts.public')
 @section('title', 'Connexion membre | EXPOSIS')
 @section('description', 'Connectez-vous à votre espace membre EXPOSIS.')
+@section('robots', 'noindex, nofollow')
 @section('content')
     <section class="auth-page">
         <div class="auth-content">

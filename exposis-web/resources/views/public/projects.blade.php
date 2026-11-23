@@ -1,6 +1,7 @@
 @extends('layouts.public')
-@section('title', 'Projets de la communauté | EXPOSIS')
-@section('description', 'Découvrez les projets de recherche et d’innovation portés par les membres d’EXPOSIS.')
+@section('title', 'Projets de recherche et d’innovation | EXPOSIS')
+@section('description', 'Découvrez les projets de recherche appliquée, d’expérimentation et d’innovation numérique portés par la communauté EXPOSIS.')
+@section('robots', request()->filled('q') || request()->filled('pole') ? 'noindex, follow' : 'index, follow, max-image-preview:large')
 @section('content')
     <section class="page-hero projects-hero">
         <div class="section-kicker"><span>EX / 03</span> Recherche en action</div>

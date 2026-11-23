@@ -1,6 +1,6 @@
 @extends('layouts.public')
-@section('title', 'Domaines et services | EXPOSIS')
-@section('description', 'Étude de faisabilité, prototype MVP, collaboration de recherche et formation avec EXPOSIS.')
+@section('title', 'Recherche, expérimentation et projets numériques | EXPOSIS')
+@section('description', 'Explorez les domaines d’EXPOSIS : recherche appliquée, étude de faisabilité, prototypage et formation numérique en Côte d’Ivoire.')
 @section('content')
     <section class="portal">
         <div class="portal__inner">

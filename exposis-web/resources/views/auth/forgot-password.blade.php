@@ -1,5 +1,6 @@
 @extends('layouts.public')
 @section('title', 'Réinitialiser votre mot de passe | EXPOSIS')
+@section('robots', 'noindex, nofollow')
 @section('content')
     <section class="portal"><div class="portal__inner">
         <header class="portal__heading"><span class="portal__eyebrow">Espace membre</span><h1>Réinitialiser votre mot de passe.</h1><p>Nous vous enverrons un lien si cette adresse est associée à un compte.</p></header>
