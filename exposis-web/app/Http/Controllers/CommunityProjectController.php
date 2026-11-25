@@ -4,33 +4,100 @@ namespace App\Http\Controllers;
 
 use App\Models\PublicProject;
 use App\Models\PublicProjectImage;
-use App\Models\PublicProjectReport;
 use App\Notifications\CommunityProjectSubmitted;
+use App\Support\ProjectBody;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class CommunityProjectController extends Controller
 {
     public function index(Request $request)
     {
+        $projects = $request->user()->publicProjects()->with(['report'])->withCount('images')->latest()->paginate(15);
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'projects' => $projects->getCollection()->map(fn (PublicProject $project) => [
+                    'id' => $project->id,
+                    'slug' => $project->slug,
+                    'title' => $project->title,
+                    'pole' => $project->pole,
+                    'status' => $project->status,
+                    'images_count' => $project->images_count,
+                    'published_at' => $project->published_at?->toIso8601String(),
+                    'report' => $project->report ? [
+                        'name' => $project->report->original_name,
+                        'approved' => (bool) $project->report->approved_at,
+                        'url' => route('community.projects.report.download', $project, false),
+                    ] : null,
+                ])->values(),
+                'pagination' => [
+                    'current_page' => $projects->currentPage(),
+                    'last_page' => $projects->lastPage(),
+                    'total' => $projects->total(),
+                ],
+                'status_message' => session('status'),
+                'errors' => session('errors')?->getBag('default')->messages() ?? [],
+            ]);
+        }
+
         return view('community.projects.index', [
-            'projects' => $request->user()->publicProjects()->with(['report'])->withCount('images')->latest()->paginate(15),
+            'projects' => $projects,
         ]);
     }
 
-    public function create()
+    public function create(Request $request)
     {
+        if ($request->expectsJson()) {
+            return response()->json([
+                'poles' => PublicProject::POLES,
+                'statuses' => ['Recherche', 'Prototype', 'MVP', 'Terminé'],
+            ]);
+        }
+
         return view('community.projects.create');
     }
 
     public function show(Request $request, PublicProject $project)
     {
         abort_unless($project->user_id === $request->user()->id, 403);
+
+        if ($request->expectsJson()) {
+            $project->load(['images', 'report']);
+
+            return response()->json([
+                'project' => [
+                    'id' => $project->id,
+                    'slug' => $project->slug,
+                    'title' => $project->title,
+                    'pole' => $project->pole,
+                    'status' => $project->status,
+                    'summary' => $project->summary,
+                    'body' => $project->body,
+                    'body_html' => ProjectBody::render($project->body),
+                    'team_members' => $project->team_members ?? [],
+                    'repo_url' => $project->repo_url,
+                    'published_at' => $project->published_at?->toIso8601String(),
+                    'images' => $project->images->map(fn (PublicProjectImage $image) => [
+                        'id' => $image->id,
+                        'name' => $image->original_name,
+                        'url' => route('community.projects.images.show', [$project, $image], false),
+                    ])->values(),
+                    'report' => $project->report ? [
+                        'name' => $project->report->original_name,
+                        'approved' => (bool) $project->report->approved_at,
+                    ] : null,
+                ],
+                'status_message' => session('status'),
+                'errors' => session('errors')?->getBag('default')->messages() ?? [],
+            ]);
+        }
 
         return view('community.projects.show', [
             'project' => $project->load(['images', 'report']),
@@ -44,6 +111,19 @@ class CommunityProjectController extends Controller
         abort_unless(Storage::disk('local')->exists($image->path), 404);
 
         return Storage::disk('local')->response($image->path, headers: [
+            'Cache-Control' => 'private, no-store',
+            'X-Content-Type-Options' => 'nosniff',
+        ]);
+    }
+
+    public function downloadReport(Request $request, PublicProject $project)
+    {
+        abort_unless($project->user_id === $request->user()->id, 403);
+
+        $report = $project->report;
+        abort_unless($report && Storage::disk('local')->exists($report->path), 404);
+
+        return Storage::disk('local')->download($report->path, $report->original_name, [
             'Cache-Control' => 'private, no-store',
             'X-Content-Type-Options' => 'nosniff',
         ]);
@@ -64,6 +144,12 @@ class CommunityProjectController extends Controller
             'images.*' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
             'report' => ['nullable', 'file', 'mimes:pdf,docx', 'max:20480'],
         ]);
+        $data['body'] = ProjectBody::sanitize($data['body']);
+        if (trim(strip_tags($data['body'])) === '') {
+            throw ValidationException::withMessages([
+                'body' => 'La description du projet est obligatoire.',
+            ]);
+        }
 
         $imageFiles = $request->file('images', []);
         $reportFile = $request->file('report');

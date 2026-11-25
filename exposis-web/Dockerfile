@@ -8,9 +8,9 @@ COPY . .
 RUN npm run build
 
 FROM php:8.3-fpm-alpine AS php-base
-RUN apk add --no-cache libpq libzip \
-    && apk add --no-cache --virtual .build-deps $PHPIZE_DEPS libzip-dev postgresql-dev \
-    && docker-php-ext-install -j"$(nproc)" bcmath opcache pcntl pdo_pgsql zip \
+RUN apk add --no-cache libpq libzip libpng poppler-utils \
+    && apk add --no-cache --virtual .build-deps $PHPIZE_DEPS libzip-dev libpng-dev postgresql-dev \
+    && docker-php-ext-install -j"$(nproc)" bcmath gd opcache pcntl pdo_pgsql zip \
     && apk del .build-deps
 WORKDIR /var/www/html
 

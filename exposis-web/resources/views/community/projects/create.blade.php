@@ -63,10 +63,19 @@
             <span class="project-submit-form__hint">Présentez le projet en quelques phrases. (400 caractères maximum)</span>
             <x-input-error :messages="$errors->get('summary')"/>
           </div>
-          <div class="project-submit-form__field">
+          <div class="project-submit-form__field" data-rich-text>
             <x-input-label for="body" value="Description du projet *"/>
-            <textarea id="body" name="body" rows="7" maxlength="50000" required>{{ old('body') }}</textarea>
-            <span class="project-submit-form__hint">Expliquez le contexte, la démarche, les résultats ou les prochaines étapes.</span>
+            <div class="project-rich-text__toolbar" data-rich-text-toolbar role="toolbar" aria-label="Mise en forme de la description" hidden>
+              <button type="button" data-command="bold" title="Gras"><strong>G</strong></button>
+              <button type="button" data-command="italic" title="Italique"><em>I</em></button>
+              <button type="button" data-command="underline" title="Souligné"><u>S</u></button>
+              <button type="button" data-command="formatBlock" data-value="h2" title="Titre">Titre</button>
+              <button type="button" data-command="insertUnorderedList" title="Liste à puces">• Liste</button>
+              <button type="button" data-command="insertOrderedList" title="Liste numérotée">1. Liste</button>
+            </div>
+            <div class="project-rich-text__editor" data-rich-text-editor contenteditable="true" role="textbox" aria-multiline="true" aria-label="Description du projet" aria-required="true" hidden>{!! \App\Support\ProjectBody::render(old('body', '')) !!}</div>
+            <textarea id="body" name="body" rows="7" maxlength="50000" data-rich-text-source required>{{ old('body') }}</textarea>
+            <span class="project-submit-form__hint">Expliquez le contexte, la démarche, les résultats ou les prochaines étapes. Utilisez la barre d’outils pour mettre en forme votre texte.</span>
             <x-input-error :messages="$errors->get('body')"/>
           </div>
 

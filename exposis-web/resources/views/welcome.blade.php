@@ -4,7 +4,9 @@
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
 
-        <title>{{ config('app.name', 'Laravel') }}</title>
+        @include('layouts.partials.seo')
+        <link rel="icon" type="image/png" href="{{ asset('favicon.png') }}">
+        <link rel="alternate icon" href="{{ asset('favicon.ico') }}">
 
         @fonts
 

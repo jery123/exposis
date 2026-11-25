@@ -7,21 +7,42 @@ use App\Http\Controllers\Admin\PublicProjectController as AdminPublicProjectCont
 use App\Http\Controllers\Admin\RoleController as AdminRoleController;
 use App\Http\Controllers\Admin\UserRoleController as AdminUserRoleController;
 use App\Http\Controllers\CommunityProjectController;
+use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\ProjectFileController;
 use App\Http\Controllers\ProjectMessageController;
-use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PublicController;
 use App\Http\Controllers\SitemapController;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/sitemap.xml', SitemapController::class)->name('sitemap');
+Route::get('/robots.txt', fn () => response(
+    "User-agent: *\nDisallow:\nSitemap: ".rtrim(config('seo.site_url'), '/')."/sitemap.xml\n",
+    200,
+    ['Content-Type' => 'text/plain; charset=UTF-8'],
+))->name('robots');
 
 Route::get('/', [PublicController::class, 'home'])->name('home');
 Route::get('/a-propos', [PublicController::class, 'about'])->name('about');
 Route::get('/services', [PublicController::class, 'services'])->name('services');
 Route::get('/projets', [PublicController::class, 'projects'])->name('public.projects.index');
 Route::get('/projets/{project:slug}', [PublicController::class, 'project'])->name('public.projects.show');
+Route::get('/projets/{project:slug}/rapport', [PublicController::class, 'projectReport'])
+    ->middleware('auth')
+    ->name('public.projects.report.download');
+Route::get('/projets/{project:slug}/rapport/apercu', [PublicController::class, 'reportPreview'])
+    ->middleware('throttle:20,1')
+    ->name('public.projects.report.preview');
+Route::get('/projets/{project:slug}/rapport/apercu/page', [PublicController::class, 'reportPreviewPage'])
+    ->middleware('throttle:30,1')
+    ->name('public.projects.report.preview.page');
+Route::get('/projets/{project:slug}/rapport/visualiser', [PublicController::class, 'reportViewer'])
+    ->middleware(['auth', 'throttle:20,1'])
+    ->name('public.projects.report.viewer');
+Route::get('/api/public/projects/{project:slug}/report', [PublicController::class, 'projectReport'])
+    ->middleware('auth')
+    ->name('api.public.projects.report.download');
 Route::get('/contact', [PublicController::class, 'contact'])->name('contact');
 Route::get('/mentions-legales', [PublicController::class, 'legal'])->name('legal');
 
@@ -31,16 +52,29 @@ Route::get('/soumission-recue', fn () => session()->has('submission_reference')
     ? view('public.submission-received', ['reference' => session('submission_reference')])
     : redirect()->route('home'))->name('public.submissions.received');
 
-Route::get('/dashboard', fn () => redirect()->route('projects.index'))->middleware('auth')->name('dashboard');
+Route::get('/dashboard', function (Request $request) {
+    $destination = $request->user()->hasPermissionTo('admin.access')
+        ? route('admin.dashboard', absolute: false)
+        : route('projects.index', absolute: false);
+
+    if ($request->expectsJson()) {
+        return response()->json(['redirectTo' => $destination]);
+    }
+
+    return redirect()->route(
+        $request->user()->hasPermissionTo('admin.access') ? 'admin.dashboard' : 'projects.index'
+    );
+})->middleware('auth')->name('dashboard');
 
 Route::middleware('auth')->group(function () {
-    Route::get('/api/community/session', fn (\Illuminate\Http\Request $request) => response()->json([
+    Route::get('/api/community/session', fn (Request $request) => response()->json([
         'user' => ['name' => $request->user()->name],
     ]))->name('community.session');
     Route::get('/communaute/projets', [CommunityProjectController::class, 'index'])->name('community.projects.index');
     Route::get('/communaute/projets/nouveau', [CommunityProjectController::class, 'create'])->name('community.projects.create');
     Route::post('/communaute/projets', [CommunityProjectController::class, 'store'])->middleware('throttle:10,10')->name('community.projects.store');
     Route::get('/communaute/projets/{project:slug}', [CommunityProjectController::class, 'show'])->name('community.projects.show');
+    Route::get('/communaute/projets/{project:slug}/rapport', [CommunityProjectController::class, 'downloadReport'])->name('community.projects.report.download');
     Route::get('/communaute/projets/{project:slug}/images/{image}', [CommunityProjectController::class, 'image'])->name('community.projects.images.show');
     Route::post('/communaute/projets/{project:slug}/rapport', [CommunityProjectController::class, 'storeReport'])
         ->middleware('throttle:10,10')
@@ -72,6 +106,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
         Route::get('/public-projects/{public_project}/reports/{report}', [AdminPublicProjectController::class, 'report'])->name('public-projects.reports.show');
         Route::resource('public-projects', AdminPublicProjectController::class)->except('show');
     });
+    Route::get('/users/export', [AdminUserRoleController::class, 'export'])->middleware('permission:users.manage')->name('users.export');
     Route::get('/users', [AdminUserRoleController::class, 'index'])->middleware('permission:users.manage')->name('users.index');
     Route::patch('/users/{user}/role', [AdminUserRoleController::class, 'update'])->middleware('permission:users.manage')->name('users.role.update');
     Route::resource('roles', AdminRoleController::class)->except('show')->middleware('permission:roles.manage');

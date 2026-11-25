@@ -1,15 +1,16 @@
 # EXPOSIS
 
-EXPOSIS is a research, experimentation, and innovation community in Côte d’Ivoire. The Next.js public website is in [`../exposis-next`](../exposis-next); this Laravel application remains its data and workflow backend, including member accounts, project submissions, evaluation, moderation, and email notifications. Laravel's original Blade pages remain available as a standalone fallback.
+EXPOSIS is a research, experimentation, and innovation community in Côte d’Ivoire. This Laravel application serves the public website and member-facing screens with Blade, following the content and visual direction of the standalone Next.js preview in [`../exposis-next`](../exposis-next). Laravel continues to manage authentication, project submissions, evaluation, moderation, persistence, uploads, and email notifications.
 
 ## What the site supports
 
 - Public JSON API for published projects and visitor feasibility submissions.
-- Standalone Blade pages explaining EXPOSIS, its focus areas, and published work.
+- Blade pages for the public website, authentication, member projects, and profile.
 - Public feasibility, prototype, and research submissions at `/soumettre`. Visitors do not need an account; submissions remain private in the review queue.
 - Member registration and login. Members can submit completed or in-progress community projects with participant names, a project link, and up to five private images; proposals and images stay private until an administrator publishes them.
 - An admin workspace at `/admin` to review feasibility requests, score and evaluate them, and moderate public project submissions.
 - A public project catalogue at `/projets`, including participant lists for approved projects.
+- Approved reports stay in private storage. Visitors can read a page-image preview limited to the first half; any authenticated member can open the complete report or download the original once the project and report are published and approved.
 
 The site uses the supplied EXPOSIS logo and reflects the founding charter’s focus on applied research, practical learning, useful innovation, collaboration, and knowledge sharing.
 
@@ -19,6 +20,7 @@ The site uses the supplied EXPOSIS logo and reflects the founding charter’s fo
 - Composer
 - Node.js and npm
 - SQLite (the default database driver) or another Laravel-supported database
+- PHP DOM/XML, ZipArchive, and GD extensions plus Poppler utilities (`pdfinfo`, `pdftoppm`) for report previews. The Docker image installs these. DOCX previews render visible document text and do not include the original layout or embedded images.
 
 ## Local setup
 

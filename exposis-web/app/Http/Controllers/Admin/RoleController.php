@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Permission;
 use App\Models\Role;
 use App\Models\User;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -15,18 +16,52 @@ use Illuminate\View\View;
 
 class RoleController extends Controller
 {
-    public function index(): View
+    public function index(Request $request): View|JsonResponse
     {
+        $roles = Role::with('permissions')->withCount('users')->orderBy('name')->get();
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'roles' => $roles->map(fn (Role $role) => [
+                    'id' => $role->id,
+                    'name' => $role->name,
+                    'slug' => $role->slug,
+                    'description' => $role->description,
+                    'is_system' => $role->is_system,
+                    'users_count' => $role->users_count,
+                    'permissions' => $role->permissions->map(fn (Permission $permission) => [
+                        'id' => $permission->id,
+                        'name' => $permission->name,
+                        'slug' => $permission->slug,
+                    ])->values(),
+                    'status_message' => session('status'),
+                    'errors' => session('errors')?->getBag('default')->messages() ?? [],
+                    'old' => $this->oldInput(),
+                ])->values(),
+            ]);
+        }
+
         return view('admin.roles.index', [
-            'roles' => Role::with('permissions')->withCount('users')->orderBy('name')->get(),
+            'roles' => $roles,
         ]);
     }
 
-    public function create(): View
+    public function create(Request $request): View|JsonResponse
     {
+        $permissions = Permission::orderBy('category')->orderBy('name')->get()->groupBy('category');
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'role' => ['name' => '', 'description' => '', 'permission_ids' => []],
+                'permissions' => $this->permissionsData($permissions),
+                'errors' => session('errors')?->getBag('default')->messages() ?? [],
+                'old' => $this->oldInput(),
+            ]);
+        }
+
         return view('admin.roles.form', [
             'role' => new Role,
-            'permissions' => Permission::orderBy('category')->orderBy('name')->get()->groupBy('category'),
+            'permissions' => $permissions,
         ]);
     }
 
@@ -49,13 +84,30 @@ class RoleController extends Controller
         return redirect()->route('admin.roles.index')->with('status', 'Rôle créé.');
     }
 
-    public function edit(Role $role): View
+    public function edit(Request $request, Role $role): View|JsonResponse
     {
         abort_if($role->is_system, 403);
 
+        $role->load('permissions');
+        $permissions = Permission::orderBy('category')->orderBy('name')->get()->groupBy('category');
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'role' => [
+                    'id' => $role->id,
+                    'name' => $role->name,
+                    'description' => $role->description,
+                    'permission_ids' => $role->permissions->modelKeys(),
+                ],
+                'permissions' => $this->permissionsData($permissions),
+                'errors' => session('errors')?->getBag('default')->messages() ?? [],
+                'old' => $this->oldInput(),
+            ]);
+        }
+
         return view('admin.roles.form', [
-            'role' => $role->load('permissions'),
-            'permissions' => Permission::orderBy('category')->orderBy('name')->get()->groupBy('category'),
+            'role' => $role,
+            'permissions' => $permissions,
         ]);
     }
 
@@ -114,5 +166,23 @@ class RoleController extends Controller
             'permission_ids' => ['nullable', 'array'],
             'permission_ids.*' => ['required', 'integer', 'distinct', 'exists:permissions,id'],
         ]);
+    }
+
+    private function permissionsData($permissions): array
+    {
+        return $permissions->map(fn ($items) => $items->map(fn (Permission $permission) => [
+            'id' => $permission->id,
+            'name' => $permission->name,
+            'slug' => $permission->slug,
+        ])->values())->all();
+    }
+
+    private function oldInput(): array
+    {
+        return [
+            'name' => old('name'),
+            'description' => old('description'),
+            'permission_ids' => old('permission_ids'),
+        ];
     }
 }

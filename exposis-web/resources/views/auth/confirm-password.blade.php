@@ -1,27 +1,14 @@
-<x-guest-layout>
-    <div class="mb-4 text-sm text-gray-600">
-        {{ __('This is a secure area of the application. Please confirm your password before continuing.') }}
-    </div>
-
-    <form method="POST" action="{{ route('password.confirm') }}">
-        @csrf
-
-        <!-- Password -->
-        <div>
-            <x-input-label for="password" :value="__('Password')" />
-
-            <x-text-input id="password" class="block mt-1 w-full"
-                            type="password"
-                            name="password"
-                            required autocomplete="current-password" />
-
-            <x-input-error :messages="$errors->get('password')" class="mt-2" />
-        </div>
-
-        <div class="flex justify-end mt-4">
-            <x-primary-button>
-                {{ __('Confirm') }}
-            </x-primary-button>
-        </div>
-    </form>
-</x-guest-layout>
+@extends('layouts.public')
+@section('title', 'Confirmer votre identité | EXPOSIS')
+@section('robots', 'noindex, nofollow')
+@section('content')
+    <section class="portal"><div class="portal__inner">
+        <header class="portal__heading"><span class="portal__eyebrow">Espace membre</span><h1>Confirmer votre identité.</h1><p>Saisissez votre mot de passe pour continuer.</p></header>
+        @if ($errors->any())<p class="portal-message portal-message--error" role="alert">{{ $errors->first() }}</p>@endif
+        <form action="{{ route('password.confirm') }}" class="portal__form" method="POST">
+            @csrf
+            <label class="portal__field"><span class="portal__label">Mot de passe</span><input autocomplete="current-password" name="password" required type="password">@error('password')<span class="portal__error">{{ $message }}</span>@enderror</label>
+            <button class="portal__button portal__button--accent" type="submit">Confirmer</button>
+        </form>
+    </div></section>
+@endsection

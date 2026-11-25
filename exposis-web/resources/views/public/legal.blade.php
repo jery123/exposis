@@ -2,14 +2,20 @@
 @section('title', 'Mentions légales | EXPOSIS')
 @section('description', 'Mentions légales et données personnelles d’EXPOSIS.')
 @section('content')
-@php $todo = '<b style="color:#B84A00">[À compléter]</b>'; @endphp
-<div class="ph"><div class="w"><h1>Mentions légales.</h1></div></div>
-<section><div class="w" style="max-width:820px">
-  <ul class="pri" style="margin-top:0">
-    <li><b>Forme juridique</b><span>{!! $todo !!}</span></li><li><b>Adresse du siège</b><span>{!! $todo !!}</span></li>
-    <li><b>Directeur de la publication</b><span>{!! $todo !!}</span></li><li><b>N° d’enregistrement</b><span>{!! $todo !!}</span></li>
-    <li><b>Contact</b><span>contact-lab@exposis.net</span></li>
-    <li><b>Données personnelles</b><span>Les données servent uniquement à traiter votre demande, conformément à la loi ivoirienne n° 2013-450 et sous le contrôle de l’ARTCI. Durée de conservation : {!! $todo !!}. Droits d’accès, de rectification et d’opposition : {!! $todo !!}.</span></li>
-    <li><b>Propriété intellectuelle</b><span>Soumettre un projet ne transfère aucun droit.</span></li></ul>
-</div></section>
+    <section class="portal">
+        <div class="portal__inner">
+            <header class="portal__heading"><span class="portal__eyebrow">EXPOSIS</span><h1>Mentions légales.</h1></header>
+            <section class="portal__card">
+                <ul>
+                    <li><strong>Forme juridique :</strong> [À compléter]</li>
+                    <li><strong>Adresse du siège :</strong> [À compléter]</li>
+                    <li><strong>Directeur de la publication :</strong> [À compléter]</li>
+                    <li><strong>N° d’enregistrement :</strong> [À compléter]</li>
+                    <li><strong>Contact :</strong> <a class="portal__link" href="mailto:contact-lab@exposis.net">contact-lab@exposis.net</a></li>
+                    <li><strong>Données personnelles :</strong> les données servent uniquement à traiter votre demande, conformément à la loi ivoirienne n° 2013-450 et sous le contrôle de l’ARTCI. Durée de conservation : [À compléter]. Droits d’accès, de rectification et d’opposition : [À compléter].</li>
+                    <li><strong>Propriété intellectuelle :</strong> soumettre un projet ne transfère aucun droit.</li>
+                </ul>
+            </section>
+        </div>
+    </section>
 @endsection

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -14,8 +15,15 @@ class AuthenticatedSessionController extends Controller
     /**
      * Display the login view.
      */
-    public function create(): View
+    public function create(Request $request): View|JsonResponse
     {
+        if ($request->expectsJson()) {
+            return response()->json([
+                'status_message' => session('status'),
+                'errors' => session('errors')?->getBag('default')->messages() ?? [],
+            ]);
+        }
+
         return view('auth.login');
     }
 

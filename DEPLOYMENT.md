@@ -1,14 +1,27 @@
 # Production deployment
 
 This repository includes a Docker Compose deployment for a Linux VPS with a
-public IPv4/IPv6 address. It runs the Next.js website, Laravel/PHP-FPM backend,
+public IPv4/IPv6 address. It runs the Laravel website and PHP-FPM backend,
 Nginx, a persistent PostgreSQL database, a Laravel queue worker, and Caddy for
 automatic HTTPS. Only ports 80 and 443 are published; the database and PHP-FPM
 are private to the Docker networks.
 
-Before building from a fresh clone, ensure the Next.js source is present in
-`exposis-next`. The parent Git repository records that directory as a submodule
-but currently has no `.gitmodules` mapping, so a fresh clone may leave it empty.
+## UI and backend
+
+Caddy sends site traffic to Laravel's Nginx service. The public, authentication,
+and member-facing screens are rendered by Laravel Blade using the Next.js
+frontend as their visual and content reference. Laravel continues to handle
+authentication, authorization, validation, persistence, uploads, and email.
+Caddy applies transport, content-type, framing, referrer, and browser feature
+security headers to public responses.
+
+Approved project reports remain on Laravel's private storage disk. The app
+renders guest previews as page images and limits them to the first half of a
+report; any authenticated member can open the full report and download the
+original once the project is published and the report is approved. The Laravel
+image includes PHP GD and Poppler utilities for rendering. DOCX previews contain
+visible text; the original download retains the document's layout and embedded
+images.
 
 ## Requirements
 

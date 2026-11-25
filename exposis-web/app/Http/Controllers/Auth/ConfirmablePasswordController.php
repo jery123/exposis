@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -14,8 +15,15 @@ class ConfirmablePasswordController extends Controller
     /**
      * Show the confirm password view.
      */
-    public function show(): View
+    public function show(Request $request): View|JsonResponse
     {
+        if ($request->expectsJson()) {
+            return response()->json([
+                'status_message' => session('status'),
+                'errors' => session('errors')?->getBag('default')->messages() ?? [],
+            ]);
+        }
+
         return view('auth.confirm-password');
     }
 

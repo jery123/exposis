@@ -14,7 +14,8 @@ class AdminAccessTest extends TestCase
 
     public function test_admin_workspace_has_dedicated_navigation_and_role_management(): void
     {
-        $admin = User::factory()->create(['role' => 'admin']);
+        $adminRole = Role::where('slug', 'admin')->firstOrFail();
+        $admin = User::factory()->create(['role' => 'admin', 'role_id' => $adminRole->id]);
 
         $this->actingAs($admin)
             ->get(route('admin.dashboard'))
@@ -28,9 +29,106 @@ class AdminAccessTest extends TestCase
             ->assertForbidden();
     }
 
+    public function test_admin_project_forms_render_the_responsive_workspace_layout(): void
+    {
+        $adminRole = Role::where('slug', 'admin')->firstOrFail();
+        $admin = User::factory()->create(['role' => 'admin', 'role_id' => $adminRole->id]);
+
+        $this->actingAs($admin)
+            ->get(route('admin.public-projects.create'))
+            ->assertOk()
+            ->assertSee('admin-project-form', false)
+            ->assertSee('admin-form-grid--two', false)
+            ->assertSee('name="publish"', false);
+
+        $project = $admin->projects()->create([
+            'title' => 'Projet à examiner',
+            'request_type' => 'feasibility',
+            'problem' => 'Un problème concret à résoudre.',
+            'description' => 'Une description détaillée du projet.',
+        ]);
+
+        $this->get(route('admin.projects.show', $project))
+            ->assertOk()
+            ->assertSee('admin-project-detail', false)
+            ->assertSee('admin-evaluation-grid', false)
+            ->assertSee('name="technical"', false);
+    }
+
+    public function test_admin_can_filter_user_profiles_by_search_and_role(): void
+    {
+        $adminRole = Role::where('slug', 'admin')->firstOrFail();
+        $admin = User::factory()->create(['role' => 'admin', 'role_id' => $adminRole->id]);
+        $visitorRole = Role::where('slug', 'visitor')->firstOrFail();
+        $matchingUser = User::factory()->create([
+            'name' => 'Awa Kouame',
+            'email' => 'awa@example.test',
+            'organization_name' => 'Recherche Exposis',
+            'role' => 'visitor',
+            'role_id' => $visitorRole->id,
+        ]);
+        User::factory()->create([
+            'name' => 'Koffi Yao',
+            'email' => 'koffi@example.test',
+            'role' => 'visitor',
+            'role_id' => $visitorRole->id,
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('admin.users.index', ['q' => 'Recherche Exposis', 'role_id' => $visitorRole->id]))
+            ->assertOk()
+            ->assertSee('Awa Kouame')
+            ->assertDontSee('Koffi Yao')
+            ->assertSee(route('admin.users.export', ['q' => 'Recherche Exposis', 'role_id' => $visitorRole->id]));
+
+        $this->assertSame($visitorRole->id, $matchingUser->fresh()->role_id);
+    }
+
+    public function test_admin_can_export_user_profiles_with_the_applied_filters(): void
+    {
+        $adminRole = Role::where('slug', 'admin')->firstOrFail();
+        $admin = User::factory()->create(['role' => 'admin', 'role_id' => $adminRole->id]);
+        $visitorRole = Role::where('slug', 'visitor')->firstOrFail();
+        User::factory()->create([
+            'name' => '=HYPERLINK("https://example.test")',
+            'email' => 'exported@example.test',
+            'organization_name' => 'Organisation exportée',
+            'phone' => '+22501020304',
+            'role' => 'visitor',
+            'role_id' => $visitorRole->id,
+        ]);
+        User::factory()->create([
+            'name' => 'Compte à exclure',
+            'email' => 'excluded@example.test',
+            'role' => 'member',
+        ]);
+
+        $response = $this->actingAs($admin)
+            ->get(route('admin.users.export', ['role_id' => $visitorRole->id]))
+            ->assertOk()
+            ->assertHeader('content-type', 'text/csv; charset=UTF-8')
+            ->assertDownload('exposis-comptes-'.now()->format('Ymd').'.csv');
+
+        $csv = $response->streamedContent();
+        $this->assertStringContainsString("'=HYPERLINK", $csv);
+        $this->assertStringContainsString('exported@example.test', $csv);
+        $this->assertStringNotContainsString('excluded@example.test', $csv);
+    }
+
+    public function test_dashboard_sends_admins_to_their_workspace_and_members_to_their_own(): void
+    {
+        $adminRole = Role::where('slug', 'admin')->firstOrFail();
+        $admin = User::factory()->create(['role' => 'admin', 'role_id' => $adminRole->id]);
+        $member = User::factory()->create();
+
+        $this->actingAs($admin)->get(route('dashboard'))->assertRedirect(route('admin.dashboard'));
+        $this->actingAs($member)->get(route('dashboard'))->assertRedirect(route('projects.index'));
+    }
+
     public function test_admin_can_create_a_role_with_selected_permissions(): void
     {
-        $admin = User::factory()->create(['role' => 'admin']);
+        $adminRole = Role::where('slug', 'admin')->firstOrFail();
+        $admin = User::factory()->create(['role' => 'admin', 'role_id' => $adminRole->id]);
         $permission = Permission::where('slug', 'projects.manage')->firstOrFail();
 
         $this->actingAs($admin)->post(route('admin.roles.store'), [
@@ -91,13 +189,17 @@ class AdminAccessTest extends TestCase
 
     public function test_admin_can_assign_a_role_to_another_account(): void
     {
-        $admin = User::factory()->create(['role' => 'admin']);
+        $adminRole = Role::where('slug', 'admin')->firstOrFail();
+        $admin = User::factory()->create(['role' => 'admin', 'role_id' => $adminRole->id]);
         $member = User::factory()->create();
         $role = Role::create([
             'name' => 'Gestionnaire des projets',
             'slug' => 'gestionnaire-des-projets',
         ]);
-        $role->permissions()->sync([Permission::where('slug', 'projects.manage')->value('id')]);
+        $role->permissions()->sync([
+            Permission::where('slug', 'projects.manage')->value('id'),
+            Permission::where('slug', 'admin.access')->value('id'),
+        ]);
 
         $this->actingAs($admin)
             ->patch(route('admin.users.role.update', $member), ['role_id' => $role->id])
@@ -117,6 +219,7 @@ class AdminAccessTest extends TestCase
         $role->permissions()->sync([
             Permission::where('slug', 'roles.manage')->value('id'),
             Permission::where('slug', 'dashboard.view')->value('id'),
+            Permission::where('slug', 'admin.access')->value('id'),
         ]);
         $admin = User::factory()->create(['role' => $role->slug, 'role_id' => $role->id]);
 
@@ -128,6 +231,6 @@ class AdminAccessTest extends TestCase
             ])
             ->assertSessionHasErrors('permission_ids');
 
-        $this->assertSame(2, $role->fresh()->permissions()->count());
+        $this->assertSame(3, $role->fresh()->permissions()->count());
     }
 }

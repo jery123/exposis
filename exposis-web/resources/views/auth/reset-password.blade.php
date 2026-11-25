@@ -1,27 +1,17 @@
-<x-guest-layout>
-    <div class="auth-heading">
-        <span class="auth-step">Accès au compte · Nouveau mot de passe</span>
-        <h2>Choisissez un nouveau mot de passe.</h2>
-        <p>Choisissez un mot de passe que vous n’utilisez pas déjà ailleurs.</p>
-    </div>
-    <form class="auth-form" method="POST" action="/reset-password">
-        @csrf
-        <input type="hidden" name="token" value="{{ $request->route('token') }}">
-        <div class="auth-field">
-            <label for="email">Adresse e-mail</label>
-            <input id="email" name="email" type="email" value="{{ old('email', $request->email) }}" required autofocus autocomplete="username">
-            @error('email')<p class="auth-error">{{ $message }}</p>@enderror
-        </div>
-        <div class="auth-field">
-            <label for="password">Nouveau mot de passe</label>
-            <input id="password" name="password" type="password" required autocomplete="new-password">
-            @error('password')<p class="auth-error">{{ $message }}</p>@enderror
-        </div>
-        <div class="auth-field">
-            <label for="password_confirmation">Confirmer le mot de passe</label>
-            <input id="password_confirmation" name="password_confirmation" type="password" required autocomplete="new-password">
-            @error('password_confirmation')<p class="auth-error">{{ $message }}</p>@enderror
-        </div>
-        <button class="auth-submit" type="submit">Enregistrer le nouveau mot de passe <span aria-hidden="true">↗</span></button>
-    </form>
-</x-guest-layout>
+@extends('layouts.public')
+@section('title', 'Choisir un nouveau mot de passe | EXPOSIS')
+@section('robots', 'noindex, nofollow')
+@section('content')
+    <section class="portal"><div class="portal__inner">
+        <header class="portal__heading"><span class="portal__eyebrow">Espace membre</span><h1>Choisir un nouveau mot de passe.</h1></header>
+        @if ($errors->any())<div class="portal-message portal-message--error" role="alert"><ul>@foreach ($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>@endif
+        <form action="{{ route('password.store') }}" class="portal__form" method="POST">
+            @csrf
+            <input name="token" type="hidden" value="{{ $request->route('token') }}">
+            <label class="portal__field"><span class="portal__label">Adresse e-mail</span><input autocomplete="email" name="email" required type="email" value="{{ old('email', $request->email) }}">@error('email')<span class="portal__error">{{ $message }}</span>@enderror</label>
+            <label class="portal__field"><span class="portal__label">Nouveau mot de passe</span><input autocomplete="new-password" name="password" required type="password">@error('password')<span class="portal__error">{{ $message }}</span>@enderror</label>
+            <label class="portal__field"><span class="portal__label">Confirmer le mot de passe</span><input autocomplete="new-password" name="password_confirmation" required type="password"></label>
+            <button class="portal__button portal__button--accent" type="submit">Réinitialiser le mot de passe</button>
+        </form>
+    </div></section>
+@endsection
